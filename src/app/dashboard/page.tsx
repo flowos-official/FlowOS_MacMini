@@ -13,7 +13,7 @@ import {
 	Users,
 	CalendarCheck,
 	Warning,
-	SkullSimple,
+	Skull,
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNodeRoles, useLatestHeartbeats } from "@/lib/hooks/use-nodes";
@@ -72,7 +72,7 @@ function MetricBar({
 }: {
 	label: string;
 	value: number | null | undefined;
-	icon: React.ComponentType<{ size: number; weight: string; className?: string }>;
+	icon: React.ComponentType<{ size: number; weight: "thin" | "light" | "regular" | "bold" | "fill" | "duotone"; className?: string }>;
 }) {
 	const pct = value ?? 0;
 	const color =
@@ -153,7 +153,7 @@ function NodeCard({
 								animate={{ scale: [1, 1.1, 1] }}
 								transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
 							>
-								<SkullSimple size={20} weight="light" className="text-red-400" />
+								<Skull size={20} weight="light" className="text-red-400" />
 							</motion.div>
 						</div>
 					)}
