@@ -1,5 +1,3 @@
 {
-  "rewrites": [
-    { "source": "/", "destination": "/flowos-agency-architecture.html" }
-  ]
+  "framework": "nextjs"
 }
