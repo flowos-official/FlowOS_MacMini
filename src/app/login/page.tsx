@@ -36,16 +36,16 @@ export default function LoginPage() {
 		<div className="min-h-screen flex items-center justify-center bg-[var(--color-background)]">
 			<div className="w-full max-w-sm space-y-8 px-6">
 				<div className="text-center space-y-2">
-					<h1 className="text-2xl font-bold tracking-tight">FlowOS Mission Control</h1>
+					<h1 className="text-2xl font-bold tracking-tight">FlowOS 관제센터</h1>
 					<p className="text-sm text-[var(--color-muted-foreground)]">
-						Mac Mini node monitoring dashboard
+						Mac Mini 노드 모니터링 대시보드
 					</p>
 				</div>
 
 				<form onSubmit={handleLogin} className="space-y-4">
 					<div className="space-y-2">
 						<label htmlFor="email" className="text-sm font-medium">
-							Email
+							이메일
 						</label>
 						<input
 							id="email"
@@ -59,7 +59,7 @@ export default function LoginPage() {
 					</div>
 					<div className="space-y-2">
 						<label htmlFor="password" className="text-sm font-medium">
-							Password
+							비밀번호
 						</label>
 						<div className="relative">
 							<input
@@ -67,7 +67,7 @@ export default function LoginPage() {
 								type="password"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
-								placeholder="Enter password"
+								placeholder="비밀번호 입력"
 								required
 								className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm placeholder:text-[var(--color-muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-foreground)] focus:ring-offset-1"
 							/>
@@ -88,7 +88,7 @@ export default function LoginPage() {
 							<CircleNotch size={16} weight="thin" className="animate-spin" />
 						) : (
 							<>
-								Sign in
+								로그인
 								<ArrowRight size={16} weight="thin" />
 							</>
 						)}

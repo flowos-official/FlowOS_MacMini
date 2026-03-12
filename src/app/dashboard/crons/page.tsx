@@ -86,12 +86,12 @@ function formatDuration(ms: number | null): string {
 function formatRelative(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const s = Math.floor(diff / 1000);
-  if (s < 60) return `${s}s ago`;
+  if (s < 60) return `${s}초 전`;
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return `${m}분 전`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+  if (h < 24) return `${h}시간 전`;
+  return `${Math.floor(h / 24)}일 전`;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,28 +104,28 @@ function StatusBadge({ status }: { status: string }) {
       return (
         <span className="inline-flex items-center gap-1 text-[var(--color-info)] text-xs font-medium">
           <SpinnerGap size={13} weight="light" className="animate-spin" />
-          running
+          실행 중
         </span>
       );
     case "success":
       return (
         <span className="inline-flex items-center gap-1 text-[var(--color-success)] text-xs font-medium">
           <CheckCircle size={13} weight="light" />
-          success
+          성공
         </span>
       );
     case "failure":
       return (
         <span className="inline-flex items-center gap-1 text-[var(--color-destructive)] text-xs font-medium">
           <XCircle size={13} weight="light" />
-          failure
+          실패
         </span>
       );
     case "timeout":
       return (
         <span className="inline-flex items-center gap-1 text-[var(--color-warning)] text-xs font-medium">
           <Clock size={13} weight="light" />
-          timeout
+          시간 초과
         </span>
       );
     default:
@@ -200,7 +200,7 @@ function ScheduleReferenceTable({
         {isCoordinator && (
           <span className="inline-flex items-center gap-1 text-xs text-[var(--color-muted-foreground)] border border-[var(--color-border)] rounded px-2 py-0.5 bg-[var(--color-background)]">
             <ShieldCheck size={11} weight="light" />
-            coordinator
+            코디네이터
           </span>
         )}
       </div>
@@ -208,10 +208,10 @@ function ScheduleReferenceTable({
         <thead>
           <tr className="border-b border-[var(--color-border)]">
             <th className="text-left px-4 py-2 text-xs font-medium text-[var(--color-muted-foreground)] w-1/2">
-              Skill
+              스킬
             </th>
             <th className="text-left px-4 py-2 text-xs font-medium text-[var(--color-muted-foreground)]">
-              Schedule
+              스케줄
             </th>
           </tr>
         </thead>
@@ -227,11 +227,11 @@ function ScheduleReferenceTable({
                 {entry.skill}
                 {entry.coordinatorOnly && (
                   <span
-                    title="coordinator-only"
+                    title="코디네이터 전용"
                     className="inline-flex items-center gap-0.5 text-[10px] text-[var(--color-muted-foreground)] border border-[var(--color-border)] rounded px-1 py-0 bg-[var(--color-secondary)]"
                   >
                     <ShieldCheck size={10} weight="light" />
-                    coord
+                    코디
                   </span>
                 )}
               </td>
@@ -283,10 +283,10 @@ export default function CronsPage() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-semibold text-[var(--color-foreground)]">
-          Cron Monitoring
+          크론 모니터링
         </h1>
         <p className="text-sm text-[var(--color-muted-foreground)] mt-0.5">
-          Schedule reference and real-time execution log for all FlowOS nodes.
+          모든 FlowOS 노드의 스케줄 참조 및 실시간 실행 로그입니다.
         </p>
       </div>
 
@@ -297,10 +297,10 @@ export default function CronsPage() {
             <Warning size={18} weight="light" className="text-[var(--color-warning)] mt-0.5 shrink-0" />
             <div className="space-y-1 min-w-0">
               <p className="text-sm font-medium text-[var(--color-foreground)]">
-                {deadCrons.length} dead cron{deadCrons.length > 1 ? "s" : ""} detected
+                죽은 크론 {deadCrons.length}건 감지
               </p>
               <p className="text-xs text-[var(--color-muted-foreground)]">
-                The following skills have not run in more than 3x their expected interval:
+                다음 스킬이 예상 간격의 3배 이상 실행되지 않았습니다:
               </p>
               <ul className="space-y-0.5 mt-1">
                 {deadCrons.map((dc) => {
@@ -314,7 +314,7 @@ export default function CronsPage() {
                       <span className="font-semibold">{dc.nodeId}</span> / {dc.skill}
                       {" "}
                       <span className="text-[var(--color-muted-foreground)]">
-                        — last ran {formatRelative(dc.lastRanAt)} (expected every {expectedMin}m, {actualMin}m elapsed)
+                        — 마지막 실행: {formatRelative(dc.lastRanAt)} (예상 간격: {expectedMin}분, 경과: {actualMin}분)
                       </span>
                     </li>
                   );
@@ -328,7 +328,7 @@ export default function CronsPage() {
       {/* Cron Schedule Reference */}
       <section>
         <h2 className="text-sm font-semibold text-[var(--color-foreground)] mb-3">
-          Cron Schedule Reference
+          크론 스케줄 참조
         </h2>
 
         {/* Node tabs */}
@@ -370,7 +370,7 @@ export default function CronsPage() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-[var(--color-foreground)]">
-            Execution Log
+            실행 로그
           </h2>
           <div className="flex items-center gap-2">
             <Funnel size={14} weight="light" className="text-[var(--color-muted-foreground)]" />
@@ -380,7 +380,7 @@ export default function CronsPage() {
               onChange={(e) => setFilterNode(e.target.value)}
               className="text-xs border border-[var(--color-border)] rounded px-2 py-1.5 bg-[var(--color-background)] text-[var(--color-foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border)]"
             >
-              <option value="all">All nodes</option>
+              <option value="all">전체 노드</option>
               {NODE_SCHEDULES.map((ns) => (
                 <option key={ns.nodeId} value={ns.nodeId}>
                   {ns.displayName}
@@ -393,11 +393,11 @@ export default function CronsPage() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="text-xs border border-[var(--color-border)] rounded px-2 py-1.5 bg-[var(--color-background)] text-[var(--color-foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--color-border)]"
             >
-              <option value="all">All statuses</option>
-              <option value="running">Running</option>
-              <option value="success">Success</option>
-              <option value="failure">Failure</option>
-              <option value="timeout">Timeout</option>
+              <option value="all">전체 상태</option>
+              <option value="running">실행 중</option>
+              <option value="success">성공</option>
+              <option value="failure">실패</option>
+              <option value="timeout">시간 초과</option>
             </select>
           </div>
         </div>
@@ -407,22 +407,22 @@ export default function CronsPage() {
             <thead>
               <tr className="bg-[var(--color-secondary)] border-b border-[var(--color-border)]">
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-[var(--color-muted-foreground)]">
-                  Node
+                  노드
                 </th>
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-[var(--color-muted-foreground)]">
-                  Skill
+                  스킬
                 </th>
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-[var(--color-muted-foreground)]">
-                  Status
+                  상태
                 </th>
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-[var(--color-muted-foreground)]">
-                  Started
+                  시작 시간
                 </th>
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-[var(--color-muted-foreground)]">
-                  Duration
+                  소요 시간
                 </th>
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-[var(--color-muted-foreground)]">
-                  Error
+                  오류
                 </th>
               </tr>
             </thead>
@@ -433,7 +433,7 @@ export default function CronsPage() {
                     colSpan={6}
                     className="px-4 py-8 text-center text-sm text-[var(--color-muted-foreground)]"
                   >
-                    No executions found.
+                    실행 내역이 없습니다.
                   </td>
                 </tr>
               ) : (
@@ -473,8 +473,8 @@ export default function CronsPage() {
 
         {filteredExecutions.length > 0 && (
           <p className="text-xs text-[var(--color-muted-foreground)] mt-2">
-            Showing {filteredExecutions.length} execution{filteredExecutions.length !== 1 ? "s" : ""}
-            {filterNode !== "all" || filterStatus !== "all" ? " (filtered)" : ""}
+            {filteredExecutions.length}건 표시 중
+            {filterNode !== "all" || filterStatus !== "all" ? " (필터 적용됨)" : ""}
           </p>
         )}
       </section>

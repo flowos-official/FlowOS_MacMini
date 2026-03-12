@@ -2,913 +2,561 @@
 
 import Link from "next/link";
 import {
-  ShieldCheck,
-  Circle,
-  Cpu,
-  HardDrive,
-  Memory,
-  Clock,
-  Pulse,
-  ArrowRight,
-  Lightning,
-  Users,
-  CalendarCheck,
+	ShieldCheck,
+	Cpu,
+	HardDrive,
+	Memory,
+	Clock,
+	Pulse,
+	ArrowRight,
+	Lightning,
+	Users,
+	CalendarCheck,
+	Warning,
+	SkullSimple,
 } from "@phosphor-icons/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNodeRoles, useLatestHeartbeats } from "@/lib/hooks/use-nodes";
 import { useActiveSessions } from "@/lib/hooks/use-sessions";
 import { useAgentEvents } from "@/lib/hooks/use-events";
 import { useFailoverEvents } from "@/lib/hooks/use-events";
+import { PulseBeacon } from "@/components/ui/pulse-beacon";
+import { cn } from "@/lib/utils";
 import type {
-  NodeRole,
-  NodeHeartbeat,
-  ActiveSession,
-  AgentEvent,
-  FailoverEvent,
+	NodeRole,
+	NodeHeartbeat,
+	ActiveSession,
+	AgentEvent,
+	FailoverEvent,
 } from "@/types/database";
 
 function timeAgo(date: string | Date | null | undefined): string {
-  if (!date) return "never";
-  const now = new Date();
-  const then = new Date(date);
-  const diffMs = now.getTime() - then.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) return `${diffSec}s ago`;
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} min ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  return `${diffDay}d ago`;
+	if (!date) return "없음";
+	const now = new Date();
+	const then = new Date(date);
+	const diffMs = now.getTime() - then.getTime();
+	const diffSec = Math.floor(diffMs / 1000);
+	if (diffSec < 60) return `${diffSec}초 전`;
+	const diffMin = Math.floor(diffSec / 60);
+	if (diffMin < 60) return `${diffMin}분 전`;
+	const diffHr = Math.floor(diffMin / 60);
+	if (diffHr < 24) return `${diffHr}시간 전`;
+	const diffDay = Math.floor(diffHr / 24);
+	return `${diffDay}일 전`;
 }
 
-function StatusDot({ status }: { status: string }) {
-  const color =
-    status === "online"
-      ? "var(--color-success)"
-      : status === "degraded"
-      ? "var(--color-warning)"
-      : "var(--color-destructive)";
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        width: 10,
-        height: 10,
-        borderRadius: "50%",
-        backgroundColor: color,
-        flexShrink: 0,
-      }}
-    />
-  );
+function isNodeAlive(hb: NodeHeartbeat | undefined): boolean {
+	if (!hb?.created_at) return false;
+	const diffMs = Date.now() - new Date(hb.created_at).getTime();
+	return diffMs < 60_000; // alive if heartbeat within 60s
 }
 
-function PriorityBadge({ priority }: { priority: string }) {
-  const bg =
-    priority === "critical"
-      ? "var(--color-destructive)"
-      : priority === "high"
-      ? "var(--color-warning)"
-      : priority === "normal"
-      ? "var(--color-info)"
-      : "var(--color-muted)";
-  return (
-    <span
-      style={{
-        fontSize: 11,
-        fontWeight: 600,
-        padding: "2px 7px",
-        borderRadius: 999,
-        background: bg,
-        color: "#fff",
-        letterSpacing: "0.03em",
-        textTransform: "capitalize",
-      }}
-    >
-      {priority}
-    </span>
-  );
-}
+const ROLE_LABELS: Record<string, string> = {
+	coordinator: "코디네이터",
+	"dev-lead": "개발 리드",
+	quality: "품질 관리",
+};
 
-function RoleBadge({ role }: { role: string }) {
-  const colorMap: Record<string, string> = {
-    coordinator: "var(--color-info)",
-    "dev-lead": "var(--color-warning)",
-    quality: "var(--color-success)",
-  };
-  const bg = colorMap[role] ?? "var(--color-muted)";
-  return (
-    <span
-      style={{
-        fontSize: 11,
-        fontWeight: 600,
-        padding: "2px 8px",
-        borderRadius: 999,
-        background: bg,
-        color: "#fff",
-        letterSpacing: "0.03em",
-        textTransform: "capitalize",
-      }}
-    >
-      {role}
-    </span>
-  );
-}
-
-function ProgressBar({ value, max }: { value: number; max: number }) {
-  const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
-  const color =
-    pct > 85
-      ? "var(--color-destructive)"
-      : pct > 60
-      ? "var(--color-warning)"
-      : "var(--color-info)";
-  return (
-    <div
-      style={{
-        height: 6,
-        borderRadius: 999,
-        background: "var(--color-border)",
-        overflow: "hidden",
-        width: "100%",
-      }}
-    >
-      <div
-        style={{
-          height: "100%",
-          width: `${pct}%`,
-          borderRadius: 999,
-          background: color,
-          transition: "width 0.3s ease",
-        }}
-      />
-    </div>
-  );
-}
-
-function MetricBar({
-  label,
-  value,
-}: {
-  label: string;
-  value: number | null | undefined;
-}) {
-  const pct = value ?? 0;
-  const color =
-    pct > 85
-      ? "var(--color-destructive)"
-      : pct > 60
-      ? "var(--color-warning)"
-      : "var(--color-success)";
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-      <span
-        style={{
-          fontSize: 11,
-          color: "var(--color-muted-foreground)",
-          width: 32,
-          flexShrink: 0,
-        }}
-      >
-        {label}
-      </span>
-      <div
-        style={{
-          flex: 1,
-          height: 5,
-          borderRadius: 999,
-          background: "var(--color-border)",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${pct}%`,
-            background: color,
-            borderRadius: 999,
-          }}
-        />
-      </div>
-      <span style={{ fontSize: 11, color: "var(--color-muted-foreground)", width: 34, textAlign: "right" }}>
-        {pct.toFixed(0)}%
-      </span>
-    </div>
-  );
-}
-
-const NODE_DISPLAY: Record<string, { name: string; role: string }> = {
-  antoni: { name: "Antoni", role: "coordinator" },
-  kyungjini: { name: "Kyungjini", role: "dev-lead" },
-  jaepini: { name: "Jaepini", role: "quality" },
+const NODE_DISPLAY: Record<string, { name: string; role: string; emoji: string }> = {
+	antoni: { name: "Antoni", role: "coordinator", emoji: "" },
+	kyungjini: { name: "Kyungjini", role: "dev-lead", emoji: "" },
+	jaepini: { name: "Jaepini", role: "quality", emoji: "" },
 };
 
 const FAILOVER_CHAIN = ["antoni", "kyungjini", "jaepini"];
 
+function MetricBar({
+	label,
+	value,
+	icon: Icon,
+}: {
+	label: string;
+	value: number | null | undefined;
+	icon: React.ComponentType<{ size: number; weight: string; className?: string }>;
+}) {
+	const pct = value ?? 0;
+	const color =
+		pct > 85
+			? "bg-red-500"
+			: pct > 60
+				? "bg-amber-500"
+				: "bg-emerald-500";
+	return (
+		<div className="flex items-center gap-2">
+			<Icon size={13} weight="light" className="text-neutral-400 shrink-0" />
+			<span className="text-[11px] text-neutral-500 w-8 shrink-0">{label}</span>
+			<div className="flex-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+				<motion.div
+					className={cn("h-full rounded-full", color)}
+					initial={{ width: 0 }}
+					animate={{ width: `${pct}%` }}
+					transition={{ duration: 0.8, ease: "easeOut" }}
+				/>
+			</div>
+			<span className="text-[11px] text-neutral-500 w-9 text-right tabular-nums">
+				{pct.toFixed(0)}%
+			</span>
+		</div>
+	);
+}
+
+function NodeCard({
+	nodeId,
+	role,
+	hb,
+	sessions,
+	index,
+}: {
+	nodeId: string;
+	role: NodeRole | undefined;
+	hb: NodeHeartbeat | undefined;
+	sessions: ActiveSession[];
+	index: number;
+}) {
+	const display = NODE_DISPLAY[nodeId] ?? { name: nodeId, role: "unknown" };
+	const alive = isNodeAlive(hb);
+	const sessionCount = sessions.length;
+	const quota = role?.claude_session_quota ?? 0;
+	const cpuPct = hb?.cpu_usage ?? null;
+	const memPct = hb?.memory_usage ?? null;
+	const diskPct =
+		hb?.disk_free_gb != null ? Math.max(0, 100 - (hb.disk_free_gb / 500) * 100) : null;
+
+	return (
+		<motion.div
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4, delay: index * 0.1 }}
+		>
+			<Link href={`/dashboard/nodes/${nodeId}`} className="block group">
+				<div
+					className={cn(
+						"relative rounded-2xl border p-5 transition-all duration-300",
+						"hover:shadow-lg hover:-translate-y-1",
+						alive
+							? "border-neutral-200 bg-white hover:border-blue-300 hover:shadow-blue-100/50"
+							: "border-red-200 bg-red-50/30 hover:border-red-300",
+					)}
+				>
+					{/* Alive glow effect */}
+					{alive && (
+						<motion.div
+							className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+							aria-hidden
+						/>
+					)}
+
+					{/* Dead overlay */}
+					{!alive && (
+						<div className="absolute top-3 right-3">
+							<motion.div
+								animate={{ scale: [1, 1.1, 1] }}
+								transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+							>
+								<SkullSimple size={20} weight="light" className="text-red-400" />
+							</motion.div>
+						</div>
+					)}
+
+					{/* Header */}
+					<div className="relative flex items-center gap-3 mb-4">
+						<PulseBeacon alive={alive} size={10} />
+						<span className="font-bold text-base tracking-tight">{display.name}</span>
+						{role?.is_coordinator && (
+							<ShieldCheck size={16} weight="light" className="text-blue-500" />
+						)}
+					</div>
+
+					{/* Badges */}
+					<div className="relative flex gap-2 flex-wrap mb-4">
+						<span
+							className={cn(
+								"text-[11px] font-semibold px-2.5 py-0.5 rounded-full",
+								display.role === "coordinator"
+									? "bg-blue-100 text-blue-700"
+									: display.role === "dev-lead"
+										? "bg-amber-100 text-amber-700"
+										: "bg-emerald-100 text-emerald-700",
+							)}
+						>
+							{ROLE_LABELS[display.role] ?? display.role}
+						</span>
+						<span
+							className={cn(
+								"text-[11px] font-medium px-2.5 py-0.5 rounded-full",
+								alive
+									? "bg-emerald-100 text-emerald-700"
+									: "bg-red-100 text-red-700",
+							)}
+						>
+							{alive ? "활성" : "비활성"}
+						</span>
+					</div>
+
+					{/* Claude Sessions */}
+					<div className="relative mb-4">
+						<div className="flex justify-between text-xs text-neutral-500 mb-1.5">
+							<span>Claude 세션</span>
+							<span className="font-semibold text-neutral-800 tabular-nums">
+								{sessionCount} / {quota}
+							</span>
+						</div>
+						<div className="h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+							<motion.div
+								className={cn(
+									"h-full rounded-full",
+									sessionCount >= quota
+										? "bg-red-500"
+										: sessionCount > 0
+											? "bg-blue-500"
+											: "bg-neutral-200",
+								)}
+								initial={{ width: 0 }}
+								animate={{ width: quota > 0 ? `${(sessionCount / quota) * 100}%` : "0%" }}
+								transition={{ duration: 0.8, ease: "easeOut" }}
+							/>
+						</div>
+					</div>
+
+					{/* Metrics */}
+					<div className="relative flex flex-col gap-2 mb-4">
+						<MetricBar label="CPU" value={cpuPct} icon={Cpu} />
+						<MetricBar label="MEM" value={memPct} icon={Memory} />
+						<MetricBar label="DSK" value={diskPct} icon={HardDrive} />
+					</div>
+
+					{/* Last heartbeat */}
+					<div className="relative flex items-center gap-1.5 text-xs text-neutral-400">
+						<Clock size={12} weight="light" />
+						<span>마지막 응답 {timeAgo(hb?.created_at)}</span>
+					</div>
+				</div>
+			</Link>
+		</motion.div>
+	);
+}
+
+function PriorityBadge({ priority }: { priority: string }) {
+	const styles: Record<string, string> = {
+		critical: "bg-red-100 text-red-700",
+		high: "bg-amber-100 text-amber-700",
+		normal: "bg-blue-100 text-blue-700",
+		low: "bg-neutral-100 text-neutral-500",
+	};
+	return (
+		<span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", styles[priority] ?? styles.low)}>
+			{priority}
+		</span>
+	);
+}
+
 export default function DashboardPage() {
-  const { data: nodeRoles = [], isLoading: rolesLoading } = useNodeRoles();
-  const { data: heartbeats = [] } = useLatestHeartbeats();
-  const { data: activeSessions = [] } = useActiveSessions();
-  const { data: agentEvents = [] } = useAgentEvents(10);
-  const { data: failoverEvents = [] } = useFailoverEvents();
+	const { data: nodeRoles = [], isLoading: rolesLoading } = useNodeRoles();
+	const { data: heartbeats = [] } = useLatestHeartbeats();
+	const { data: activeSessions = [] } = useActiveSessions();
+	const { data: agentEvents = [] } = useAgentEvents(10);
+	const { data: failoverEvents = [] } = useFailoverEvents();
 
-  const heartbeatMap: Record<string, NodeHeartbeat> = {};
-  for (const hb of heartbeats) {
-    if (hb.node_id) heartbeatMap[hb.node_id] = hb;
-  }
+	const heartbeatMap: Record<string, NodeHeartbeat> = {};
+	for (const hb of heartbeats) {
+		if (hb.node_id) heartbeatMap[hb.node_id] = hb;
+	}
 
-  const roleMap: Record<string, NodeRole> = {};
-  for (const nr of nodeRoles) {
-    if (nr.node_id) roleMap[nr.node_id] = nr;
-  }
+	const roleMap: Record<string, NodeRole> = {};
+	for (const nr of nodeRoles) {
+		if (nr.node_id) roleMap[nr.node_id] = nr;
+	}
 
-  const coordinator = nodeRoles.find((n) => n.is_coordinator);
+	const coordinator = nodeRoles.find((n) => n.is_coordinator);
+	const aliveCount = FAILOVER_CHAIN.filter((id) => isNodeAlive(heartbeatMap[id])).length;
 
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "var(--color-background)",
-        color: "var(--color-foreground)",
-        fontFamily: "inherit",
-        padding: "32px 40px",
-        maxWidth: 1280,
-        margin: "0 auto",
-      }}
-    >
-      {/* Header */}
-      <div style={{ marginBottom: 36 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Pulse size={28} weight="thin" color="var(--color-info)" />
-          <div>
-            <h1
-              style={{
-                fontSize: 26,
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                margin: 0,
-                color: "var(--color-foreground)",
-              }}
-            >
-              Mission Control
-            </h1>
-            <p
-              style={{
-                margin: 0,
-                fontSize: 13,
-                color: "var(--color-muted-foreground)",
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-                fontWeight: 500,
-              }}
-            >
-              FlowOS Node Monitoring
-            </p>
-          </div>
-        </div>
-      </div>
+	return (
+		<div className="max-w-[1280px] mx-auto">
+			{/* Header */}
+			<motion.div
+				initial={{ opacity: 0, y: -10 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.4 }}
+				className="mb-8"
+			>
+				<div className="flex items-center gap-3">
+					<Pulse size={28} weight="thin" className="text-blue-500" />
+					<div>
+						<h1 className="text-2xl font-bold tracking-tight">관제센터</h1>
+						<p className="text-sm text-neutral-500 tracking-wide">
+							FlowOS Mac Mini 노드 모니터링
+						</p>
+					</div>
+				</div>
 
-      {/* Node Status Cards */}
-      <section style={{ marginBottom: 32 }}>
-        <h2
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.07em",
-            color: "var(--color-muted-foreground)",
-            marginBottom: 14,
-          }}
-        >
-          Node Status
-        </h2>
-        {rolesLoading ? (
-          <div style={{ color: "var(--color-muted-foreground)", fontSize: 14 }}>
-            Loading nodes...
-          </div>
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 18,
-            }}
-          >
-            {FAILOVER_CHAIN.map((nodeId) => {
-              const role = roleMap[nodeId];
-              const hb = heartbeatMap[nodeId];
-              const display = NODE_DISPLAY[nodeId] ?? { name: nodeId, role: "unknown" };
-              const status = hb?.status ?? "offline";
-              const sessionCount = activeSessions.filter(
-                (s) => s.node_id === nodeId
-              ).length;
-              const quota = role?.claude_session_quota ?? 0;
-              const cpuPct = hb?.cpu_usage ?? null;
-              const memPct = hb?.memory_usage ?? null;
-              const diskPct = hb?.disk_free_gb != null ? Math.max(0, 100 - (hb.disk_free_gb / 500) * 100) : null;
+				{/* Quick status bar */}
+				<motion.div
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					transition={{ delay: 0.3 }}
+					className="mt-4 flex items-center gap-6 text-sm"
+				>
+					<div className="flex items-center gap-2">
+						<PulseBeacon alive={aliveCount > 0} size={8} />
+						<span className="text-neutral-600">
+							활성 노드 <span className="font-bold text-neutral-900">{aliveCount}</span> / {FAILOVER_CHAIN.length}
+						</span>
+					</div>
+					<div className="flex items-center gap-2 text-neutral-600">
+						<Users size={14} weight="light" />
+						총 세션 <span className="font-bold text-neutral-900">{activeSessions.length}</span>
+					</div>
+					{coordinator && (
+						<div className="flex items-center gap-2 text-neutral-600">
+							<ShieldCheck size={14} weight="light" className="text-blue-500" />
+							코디네이터: <span className="font-bold text-neutral-900">{coordinator.display_name ?? coordinator.node_id}</span>
+						</div>
+					)}
+				</motion.div>
+			</motion.div>
 
-              return (
-                <Link
-                  key={nodeId}
-                  href={`/dashboard/nodes/${nodeId}`}
-                  style={{ textDecoration: "none", color: "inherit" }}
-                >
-                  <div
-                    style={{
-                      background: "var(--color-background)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: 12,
-                      padding: "20px 22px",
-                      boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                      transition: "box-shadow 0.2s, border-color 0.2s",
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.boxShadow =
-                        "0 4px 16px rgba(0,0,0,0.10)";
-                      (e.currentTarget as HTMLDivElement).style.borderColor =
-                        "var(--color-info)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.boxShadow =
-                        "0 1px 4px rgba(0,0,0,0.06)";
-                      (e.currentTarget as HTMLDivElement).style.borderColor =
-                        "var(--color-border)";
-                    }}
-                  >
-                    {/* Card Header */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 12,
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <StatusDot status={status} />
-                        <span
-                          style={{
-                            fontWeight: 700,
-                            fontSize: 16,
-                            letterSpacing: "-0.01em",
-                          }}
-                        >
-                          {display.name}
-                        </span>
-                      </div>
-                      {role?.is_coordinator && (
-                        <ShieldCheck
-                          size={18}
-                          weight="light"
-                          color="var(--color-info)"
-                        />
-                      )}
-                    </div>
+			{/* Node Status Cards */}
+			<section className="mb-8">
+				<h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-4">
+					노드 상태
+				</h2>
+				{rolesLoading ? (
+					<div className="text-neutral-400 text-sm">노드 로딩 중...</div>
+				) : (
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+						{FAILOVER_CHAIN.map((nodeId, idx) => (
+							<NodeCard
+								key={nodeId}
+								nodeId={nodeId}
+								role={roleMap[nodeId]}
+								hb={heartbeatMap[nodeId]}
+								sessions={activeSessions.filter((s) => s.node_id === nodeId)}
+								index={idx}
+							/>
+						))}
+					</div>
+				)}
+			</section>
 
-                    {/* Badges */}
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 6,
-                        flexWrap: "wrap",
-                        marginBottom: 16,
-                      }}
-                    >
-                      <RoleBadge role={display.role} />
-                      <span
-                        style={{
-                          fontSize: 11,
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          background: "var(--color-muted)",
-                          color: "var(--color-muted-foreground)",
-                          fontWeight: 500,
-                          textTransform: "capitalize",
-                        }}
-                      >
-                        {status}
-                      </span>
-                    </div>
+			{/* Active Sessions + Recent Events */}
+			<div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8">
+				{/* Active Sessions */}
+				<motion.section
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.4, delay: 0.3 }}
+					className="lg:col-span-2"
+				>
+					<h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-4">
+						활성 세션
+					</h2>
+					<div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+						<div className="px-5 py-4 border-b border-neutral-100 flex items-center gap-3">
+							<Users size={18} weight="light" className="text-blue-500" />
+							<span className="font-bold text-xl tabular-nums">{activeSessions.length}</span>
+							<span className="text-neutral-500 text-sm">개 활성 세션</span>
+						</div>
+						{activeSessions.length === 0 ? (
+							<div className="px-5 py-10 text-center text-neutral-400 text-sm">
+								현재 활성 세션 없음
+							</div>
+						) : (
+							<div className="max-h-80 overflow-y-auto divide-y divide-neutral-100">
+								{activeSessions.map((s: ActiveSession, i: number) => (
+									<motion.div
+										key={s.id ?? i}
+										initial={{ opacity: 0, x: -10 }}
+										animate={{ opacity: 1, x: 0 }}
+										transition={{ delay: i * 0.05 }}
+										className="px-5 py-3"
+									>
+										<div className="flex justify-between items-center">
+											<span className="font-semibold text-sm">{s.node_id ?? "—"}</span>
+											<span className="text-[11px] text-neutral-400">{timeAgo(s.started_at)}</span>
+										</div>
+										<div className="flex gap-2 flex-wrap mt-1">
+											{s.project_id && (
+												<span className="text-[11px] bg-neutral-100 rounded px-1.5 py-0.5 text-neutral-600">
+													{s.project_id}
+												</span>
+											)}
+											{s.session_type && (
+												<span className="text-[11px] bg-neutral-100 rounded px-1.5 py-0.5 text-neutral-600">
+													{s.session_type}
+												</span>
+											)}
+											{s.model && (
+												<span className="text-[11px] bg-neutral-100 rounded px-1.5 py-0.5 text-neutral-600">
+													{s.model}
+												</span>
+											)}
+										</div>
+									</motion.div>
+								))}
+							</div>
+						)}
+					</div>
+				</motion.section>
 
-                    {/* Claude Session Quota */}
-                    <div style={{ marginBottom: 14 }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          fontSize: 12,
-                          color: "var(--color-muted-foreground)",
-                          marginBottom: 5,
-                        }}
-                      >
-                        <span>Claude Sessions</span>
-                        <span style={{ fontWeight: 600, color: "var(--color-foreground)" }}>
-                          {sessionCount} / {quota}
-                        </span>
-                      </div>
-                      <ProgressBar value={sessionCount} max={quota} />
-                    </div>
+				{/* Recent Events */}
+				<motion.section
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.4, delay: 0.4 }}
+					className="lg:col-span-3"
+				>
+					<h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-4">
+						최근 이벤트
+					</h2>
+					<div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+						{agentEvents.length === 0 ? (
+							<div className="px-5 py-10 text-center text-neutral-400 text-sm">
+								최근 이벤트 없음
+							</div>
+						) : (
+							<div className="max-h-96 overflow-y-auto divide-y divide-neutral-100">
+								{agentEvents.map((ev: AgentEvent, i: number) => (
+									<motion.div
+										key={ev.id ?? i}
+										initial={{ opacity: 0, x: 10 }}
+										animate={{ opacity: 1, x: 0 }}
+										transition={{ delay: i * 0.05 }}
+										className="px-5 py-3 flex items-center gap-3"
+									>
+										<Lightning size={14} weight="light" className="text-neutral-400 shrink-0" />
+										<div className="flex-1 min-w-0">
+											<div className="flex items-center gap-2 mb-0.5">
+												<span className="font-semibold text-sm truncate">
+													{ev.source_node ?? "—"}
+												</span>
+												<PriorityBadge priority={ev.priority ?? "normal"} />
+											</div>
+											<div className="text-xs text-neutral-500 flex gap-2 flex-wrap">
+												<span>{ev.event_type ?? "—"}</span>
+												{ev.status && (
+													<span
+														className={cn(
+															ev.status === "completed"
+																? "text-emerald-600"
+																: ev.status === "failed"
+																	? "text-red-500"
+																	: "text-neutral-400",
+														)}
+													>
+														{ev.status}
+													</span>
+												)}
+											</div>
+										</div>
+										<span className="text-[11px] text-neutral-400 shrink-0">
+											{timeAgo(ev.created_at)}
+										</span>
+									</motion.div>
+								))}
+							</div>
+						)}
+					</div>
+				</motion.section>
+			</div>
 
-                    {/* System Metrics */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 14 }}>
-                      <MetricBar label="CPU" value={cpuPct} />
-                      <MetricBar label="MEM" value={memPct} />
-                      <MetricBar label="DSK" value={diskPct} />
-                    </div>
+			{/* Failover Status */}
+			<motion.section
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.4, delay: 0.5 }}
+				className="mb-8"
+			>
+				<h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-4">
+					장애 복구 체인
+				</h2>
+				<div className="rounded-2xl border border-neutral-200 bg-white p-6">
+					<div className="flex items-center justify-between mb-6">
+						<div className="flex items-center gap-3">
+							<ShieldCheck size={20} weight="light" className="text-blue-500" />
+							<span className="font-semibold text-sm">현재 코디네이터:</span>
+							<span className="font-bold text-sm text-blue-600">
+								{coordinator?.display_name ?? coordinator?.node_id ?? "없음"}
+							</span>
+						</div>
+						{failoverEvents.length > 0 && (
+							<div className="flex items-center gap-1.5 text-xs text-neutral-400">
+								<CalendarCheck size={13} weight="light" />
+								마지막 장애 복구 {timeAgo(failoverEvents[0]?.created_at)}
+							</div>
+						)}
+					</div>
 
-                    {/* Last Heartbeat */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 5,
-                        fontSize: 12,
-                        color: "var(--color-muted-foreground)",
-                      }}
-                    >
-                      <Clock size={13} weight="light" />
-                      <span>Last seen {timeAgo(hb?.created_at)}</span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </section>
+					{/* Chain */}
+					<div className="flex items-center gap-0 flex-wrap justify-center">
+						{FAILOVER_CHAIN.map((nodeId, idx) => {
+							const role = roleMap[nodeId];
+							const hb = heartbeatMap[nodeId];
+							const alive = isNodeAlive(hb);
+							const isCoord = role?.is_coordinator ?? false;
 
-      {/* Active Sessions Summary + Recent Events side by side */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1.4fr",
-          gap: 18,
-          marginBottom: 32,
-        }}
-      >
-        {/* Active Sessions */}
-        <section>
-          <h2
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.07em",
-              color: "var(--color-muted-foreground)",
-              marginBottom: 14,
-            }}
-          >
-            Active Sessions
-          </h2>
-          <div
-            style={{
-              background: "var(--color-background)",
-              border: "1px solid var(--color-border)",
-              borderRadius: 12,
-              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-              overflow: "hidden",
-            }}
-          >
-            {/* Summary row */}
-            <div
-              style={{
-                padding: "14px 20px",
-                borderBottom: "1px solid var(--color-border)",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              <Users size={18} weight="light" color="var(--color-info)" />
-              <span style={{ fontWeight: 700, fontSize: 22 }}>
-                {activeSessions.length}
-              </span>
-              <span style={{ color: "var(--color-muted-foreground)", fontSize: 13 }}>
-                total active sessions
-              </span>
-            </div>
+							return (
+								<div key={nodeId} className="flex items-center">
+									<motion.div
+										initial={{ opacity: 0, scale: 0.9 }}
+										animate={{ opacity: 1, scale: 1 }}
+										transition={{ delay: 0.6 + idx * 0.1 }}
+										className={cn(
+											"flex flex-col items-center gap-2 px-6 py-4 rounded-xl border min-w-[130px] transition-all",
+											isCoord
+												? "border-blue-300 bg-blue-50/50 shadow-sm"
+												: alive
+													? "border-neutral-200 bg-neutral-50"
+													: "border-red-200 bg-red-50/50",
+										)}
+									>
+										<div className="flex items-center gap-2">
+											<PulseBeacon alive={alive} size={8} />
+											<span className="font-bold text-sm">{NODE_DISPLAY[nodeId]?.name ?? nodeId}</span>
+											{isCoord && <ShieldCheck size={14} weight="light" className="text-blue-500" />}
+										</div>
+										<span className="text-[11px] text-neutral-500">
+											우선순위 {idx + 1}
+										</span>
+										<span
+											className={cn(
+												"text-[11px] font-semibold",
+												alive ? "text-emerald-600" : "text-red-500",
+											)}
+										>
+											{alive ? "활성" : "비활성"}
+										</span>
+									</motion.div>
+									{idx < FAILOVER_CHAIN.length - 1 && (
+										<div className="px-3 text-neutral-300">
+											<ArrowRight size={18} weight="light" />
+										</div>
+									)}
+								</div>
+							);
+						})}
+					</div>
 
-            {activeSessions.length === 0 ? (
-              <div
-                style={{
-                  padding: "20px",
-                  textAlign: "center",
-                  color: "var(--color-muted-foreground)",
-                  fontSize: 13,
-                }}
-              >
-                No active sessions
-              </div>
-            ) : (
-              <div style={{ maxHeight: 320, overflowY: "auto" }}>
-                {activeSessions.map((s: ActiveSession, i: number) => (
-                  <div
-                    key={s.id ?? i}
-                    style={{
-                      padding: "12px 20px",
-                      borderBottom:
-                        i < activeSessions.length - 1
-                          ? "1px solid var(--color-border)"
-                          : undefined,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 4,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <span style={{ fontWeight: 600, fontSize: 13 }}>
-                        {s.node_id ?? "—"}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: "var(--color-muted-foreground)",
-                        }}
-                      >
-                        {timeAgo(s.started_at)}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 8,
-                        flexWrap: "wrap",
-                        fontSize: 12,
-                        color: "var(--color-muted-foreground)",
-                      }}
-                    >
-                      {s.project_id && (
-                        <span
-                          style={{
-                            background: "var(--color-muted)",
-                            borderRadius: 4,
-                            padding: "1px 6px",
-                          }}
-                        >
-                          {s.project_id}
-                        </span>
-                      )}
-                      {s.session_type && (
-                        <span
-                          style={{
-                            background: "var(--color-muted)",
-                            borderRadius: 4,
-                            padding: "1px 6px",
-                          }}
-                        >
-                          {s.session_type}
-                        </span>
-                      )}
-                      {s.model && (
-                        <span
-                          style={{
-                            background: "var(--color-muted)",
-                            borderRadius: 4,
-                            padding: "1px 6px",
-                          }}
-                        >
-                          {s.model}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Recent Events */}
-        <section>
-          <h2
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.07em",
-              color: "var(--color-muted-foreground)",
-              marginBottom: 14,
-            }}
-          >
-            Recent Events
-          </h2>
-          <div
-            style={{
-              background: "var(--color-background)",
-              border: "1px solid var(--color-border)",
-              borderRadius: 12,
-              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-              overflow: "hidden",
-            }}
-          >
-            {agentEvents.length === 0 ? (
-              <div
-                style={{
-                  padding: "20px",
-                  textAlign: "center",
-                  color: "var(--color-muted-foreground)",
-                  fontSize: 13,
-                }}
-              >
-                No recent events
-              </div>
-            ) : (
-              <div style={{ maxHeight: 380, overflowY: "auto" }}>
-                {agentEvents.map((ev: AgentEvent, i: number) => (
-                  <div
-                    key={ev.id ?? i}
-                    style={{
-                      padding: "11px 20px",
-                      borderBottom:
-                        i < agentEvents.length - 1
-                          ? "1px solid var(--color-border)"
-                          : undefined,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                    }}
-                  >
-                    <Lightning
-                      size={14}
-                      weight="light"
-                      color="var(--color-muted-foreground)"
-                      style={{ flexShrink: 0 }}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          marginBottom: 2,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontWeight: 600,
-                            fontSize: 13,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {ev.source_node ?? "—"}
-                        </span>
-                        <PriorityBadge priority={ev.priority ?? "normal"} />
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: "var(--color-muted-foreground)",
-                          display: "flex",
-                          gap: 8,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <span>{ev.event_type ?? "—"}</span>
-                        {ev.status && (
-                          <span
-                            style={{
-                              color:
-                                ev.status === "completed"
-                                  ? "var(--color-success)"
-                                  : ev.status === "failed"
-                                  ? "var(--color-destructive)"
-                                  : "var(--color-muted-foreground)",
-                            }}
-                          >
-                            {ev.status}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color: "var(--color-muted-foreground)",
-                        whiteSpace: "nowrap",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {timeAgo(ev.created_at)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
-
-      {/* Failover Status */}
-      <section style={{ marginBottom: 32 }}>
-        <h2
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.07em",
-            color: "var(--color-muted-foreground)",
-            marginBottom: 14,
-          }}
-        >
-          Failover Status
-        </h2>
-        <div
-          style={{
-            background: "var(--color-background)",
-            border: "1px solid var(--color-border)",
-            borderRadius: 12,
-            padding: "22px 28px",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 20,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <ShieldCheck size={20} weight="light" color="var(--color-info)" />
-              <span style={{ fontWeight: 600, fontSize: 14 }}>
-                Current Coordinator:
-              </span>
-              <span
-                style={{
-                  fontWeight: 700,
-                  fontSize: 14,
-                  color: "var(--color-info)",
-                }}
-              >
-                {coordinator?.node_id ?? "None"}
-              </span>
-            </div>
-            {failoverEvents.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                  fontSize: 12,
-                  color: "var(--color-muted-foreground)",
-                }}
-              >
-                <CalendarCheck size={13} weight="light" />
-                <span>
-                  Last failover {timeAgo(failoverEvents[0]?.created_at)}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Chain Visualization */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0,
-              flexWrap: "wrap",
-            }}
-          >
-            {FAILOVER_CHAIN.map((nodeId, idx) => {
-              const role = roleMap[nodeId];
-              const hb = heartbeatMap[nodeId];
-              const status = hb?.status ?? "offline";
-              const isCoord = role?.is_coordinator ?? false;
-
-              return (
-                <div
-                  key={nodeId}
-                  style={{ display: "flex", alignItems: "center" }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "14px 22px",
-                      borderRadius: 10,
-                      border: `1.5px solid ${isCoord ? "var(--color-info)" : "var(--color-border)"}`,
-                      background: isCoord
-                        ? "rgba(var(--color-info-rgb, 59,130,246), 0.05)"
-                        : "var(--color-muted)",
-                      minWidth: 110,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <StatusDot status={status} />
-                      <span style={{ fontWeight: 700, fontSize: 14 }}>
-                        {nodeId}
-                      </span>
-                      {isCoord && (
-                        <ShieldCheck
-                          size={14}
-                          weight="light"
-                          color="var(--color-info)"
-                        />
-                      )}
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color: "var(--color-muted-foreground)",
-                        fontWeight: 500,
-                      }}
-                    >
-                      Priority {idx + 1}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color:
-                          status === "online"
-                            ? "var(--color-success)"
-                            : status === "degraded"
-                            ? "var(--color-warning)"
-                            : "var(--color-destructive)",
-                        textTransform: "capitalize",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {status}
-                    </span>
-                  </div>
-                  {idx < FAILOVER_CHAIN.length - 1 && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        padding: "0 10px",
-                        color: "var(--color-muted-foreground)",
-                      }}
-                    >
-                      <ArrowRight size={18} weight="light" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {failoverEvents.length > 0 && (
-            <div style={{ marginTop: 20 }}>
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "var(--color-muted-foreground)",
-                  marginBottom: 8,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                Failover History
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {failoverEvents.slice(0, 3).map((fe: FailoverEvent, i: number) => (
-                  <div
-                    key={fe.id ?? i}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      fontSize: 12,
-                      color: "var(--color-muted-foreground)",
-                    }}
-                  >
-                    <Circle size={7} weight="fill" color="var(--color-warning)" />
-                    <span>
-                      {fe.from_node ?? "?"} transferred coordinator to{" "}
-                      <strong style={{ color: "var(--color-foreground)" }}>
-                        {fe.to_node ?? "?"}
-                      </strong>
-                    </span>
-                    <span style={{ marginLeft: "auto" }}>
-                      {timeAgo(fe.created_at)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-    </div>
-  );
+					{/* Failover history */}
+					{failoverEvents.length > 0 && (
+						<div className="mt-6 pt-4 border-t border-neutral-100">
+							<div className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wide mb-3">
+								장애 복구 이력
+							</div>
+							<div className="flex flex-col gap-2">
+								{failoverEvents.slice(0, 3).map((fe: FailoverEvent, i: number) => (
+									<div key={fe.id ?? i} className="flex items-center gap-3 text-xs text-neutral-500">
+										<Warning size={12} weight="light" className="text-amber-500 shrink-0" />
+										<span>
+											{fe.from_node ?? "?"} → <strong className="text-neutral-800">{fe.to_node ?? "?"}</strong> 코디네이터 이전
+										</span>
+										<span className="ml-auto">{timeAgo(fe.created_at)}</span>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+				</div>
+			</motion.section>
+		</div>
+	);
 }

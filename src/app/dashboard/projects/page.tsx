@@ -17,12 +17,12 @@ function timeAgo(dateStr: string): string {
 	const then = new Date(dateStr).getTime();
 	const diff = Math.floor((now - then) / 1000);
 
-	if (diff < 60) return `${diff}s ago`;
-	if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-	if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-	if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`;
-	if (diff < 31536000) return `${Math.floor(diff / 2592000)}mo ago`;
-	return `${Math.floor(diff / 31536000)}y ago`;
+	if (diff < 60) return `${diff}초 전`;
+	if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+	if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+	if (diff < 2592000) return `${Math.floor(diff / 86400)}일 전`;
+	if (diff < 31536000) return `${Math.floor(diff / 2592000)}개월 전`;
+	return `${Math.floor(diff / 31536000)}년 전`;
 }
 
 function timeUntil(dateStr: string): string {
@@ -30,11 +30,11 @@ function timeUntil(dateStr: string): string {
 	const then = new Date(dateStr).getTime();
 	const diff = Math.floor((then - now) / 1000);
 
-	if (diff <= 0) return "expired";
-	if (diff < 60) return `in ${diff}s`;
-	if (diff < 3600) return `in ${Math.floor(diff / 60)}m`;
-	if (diff < 86400) return `in ${Math.floor(diff / 3600)}h`;
-	return `in ${Math.floor(diff / 86400)}d`;
+	if (diff <= 0) return "만료됨";
+	if (diff < 60) return `${diff}초 후`;
+	if (diff < 3600) return `${Math.floor(diff / 60)}분 후`;
+	if (diff < 86400) return `${Math.floor(diff / 3600)}시간 후`;
+	return `${Math.floor(diff / 86400)}일 후`;
 }
 
 function isExpired(dateStr: string): boolean {
@@ -49,17 +49,17 @@ type StatusConfig = {
 
 const STATUS_MAP: Record<string, StatusConfig> = {
 	active: {
-		label: "Active",
+		label: "활성",
 		color: "var(--color-success)",
 		bg: "rgba(34,197,94,0.1)",
 	},
 	paused: {
-		label: "Paused",
+		label: "일시정지",
 		color: "var(--color-warning)",
 		bg: "rgba(245,158,11,0.1)",
 	},
 	archived: {
-		label: "Archived",
+		label: "보관됨",
 		color: "var(--color-muted-foreground)",
 		bg: "var(--color-muted)",
 	},
@@ -67,22 +67,22 @@ const STATUS_MAP: Record<string, StatusConfig> = {
 
 const PRIORITY_MAP: Record<string, StatusConfig> = {
 	critical: {
-		label: "Critical",
+		label: "긴급",
 		color: "var(--color-destructive)",
 		bg: "rgba(239,68,68,0.1)",
 	},
 	high: {
-		label: "High",
+		label: "높음",
 		color: "var(--color-warning)",
 		bg: "rgba(245,158,11,0.1)",
 	},
 	normal: {
-		label: "Normal",
+		label: "보통",
 		color: "var(--color-info)",
 		bg: "rgba(59,130,246,0.1)",
 	},
 	low: {
-		label: "Low",
+		label: "낮음",
 		color: "var(--color-muted-foreground)",
 		bg: "var(--color-muted)",
 	},
@@ -229,7 +229,7 @@ function LockRow({ lock, projectName }: { lock: ProjectLock; projectName: string
 						color: expired ? "var(--color-destructive)" : "var(--color-muted-foreground)",
 					}}
 				>
-					{expired ? "Expired " : ""}{timeUntil(lock.expires_at)}
+					{expired ? "만료됨 " : ""}{timeUntil(lock.expires_at)}
 					<span className="block text-[10px]" style={{ color: "var(--color-muted-foreground)" }}>
 						{new Date(lock.expires_at).toLocaleString()}
 					</span>
@@ -256,7 +256,7 @@ export default function ProjectsPage() {
 		return (
 			<div className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
 				<CircleNotch size={16} weight="thin" className="animate-spin" />
-				Loading projects...
+				프로젝트 로딩 중...
 			</div>
 		);
 	}
@@ -265,7 +265,7 @@ export default function ProjectsPage() {
 		return (
 			<div className="flex items-center gap-2 text-sm" style={{ color: "var(--color-destructive)" }}>
 				<Warning size={16} weight="thin" />
-				Failed to load projects.
+				프로젝트를 불러오지 못했습니다.
 			</div>
 		);
 	}
@@ -279,9 +279,9 @@ export default function ProjectsPage() {
 			<div className="flex items-center gap-3">
 				<Folder size={22} weight="thin" className="text-[var(--color-muted-foreground)]" />
 				<div>
-					<h1 className="text-lg font-semibold text-[var(--color-foreground)]">Projects</h1>
+					<h1 className="text-lg font-semibold text-[var(--color-foreground)]">프로젝트</h1>
 					<p className="text-xs text-[var(--color-muted-foreground)] mt-0.5">
-						{projectList.length} project{projectList.length !== 1 ? "s" : ""}
+						{projectList.length}개 프로젝트
 						{lockList.length > 0 && (
 							<>
 								{" "}
@@ -294,8 +294,8 @@ export default function ProjectsPage() {
 												: "var(--color-warning)",
 									}}
 								>
-									{lockList.length} lock{lockList.length !== 1 ? "s" : ""}
-									{expiredLocksCount > 0 && ` (${expiredLocksCount} expired)`}
+									{lockList.length}개 잠금
+									{expiredLocksCount > 0 && ` (${expiredLocksCount}개 만료됨)`}
 								</span>
 							</>
 						)}
@@ -316,25 +316,25 @@ export default function ProjectsPage() {
 								style={{ backgroundColor: "var(--color-muted)" }}
 							>
 								<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-									Name
+									이름
 								</th>
 								<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-									Status
+									상태
 								</th>
 								<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-									Priority
+									우선순위
 								</th>
 								<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-									Node
+									노드
 								</th>
 								<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-									Repository
+									저장소
 								</th>
 								<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-									Updated
+									수정일
 								</th>
 								<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-									Created
+									생성일
 								</th>
 							</tr>
 						</thead>
@@ -345,7 +345,7 @@ export default function ProjectsPage() {
 										colSpan={7}
 										className="px-4 py-10 text-center text-sm text-[var(--color-muted-foreground)]"
 									>
-										No projects found.
+										프로젝트 없음.
 									</td>
 								</tr>
 							) : (
@@ -372,7 +372,7 @@ export default function ProjectsPage() {
 							className="text-[var(--color-muted-foreground)]"
 						/>
 						<h2 className="text-sm font-medium text-[var(--color-foreground)]">
-							Active Locks
+							프로젝트 잠금
 						</h2>
 						{locksLoading && (
 							<ArrowClockwise
@@ -411,22 +411,22 @@ export default function ProjectsPage() {
 									style={{ backgroundColor: "var(--color-muted)" }}
 								>
 									<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Project
+										프로젝트
 									</th>
 									<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Locked By
+										잠금 노드
 									</th>
 									<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Type
+										유형
 									</th>
 									<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Reason
+										사유
 									</th>
 									<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Expires
+										만료
 									</th>
 									<th className="px-4 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Acquired
+										획득일
 									</th>
 								</tr>
 							</thead>
@@ -437,7 +437,7 @@ export default function ProjectsPage() {
 											colSpan={6}
 											className="px-4 py-8 text-center text-sm text-[var(--color-muted-foreground)]"
 										>
-											No active locks.
+											잠금 없음.
 										</td>
 									</tr>
 								) : (

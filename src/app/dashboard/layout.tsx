@@ -12,13 +12,14 @@ import {
 	SignOut,
 } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
+import { motion } from "framer-motion";
 
 const navItems = [
-	{ href: "/dashboard", label: "Overview", icon: SquaresFour },
-	{ href: "/dashboard/projects", label: "Projects", icon: Folder },
-	{ href: "/dashboard/events", label: "Events", icon: Lightning },
-	{ href: "/dashboard/crons", label: "Crons", icon: Clock },
-	{ href: "/dashboard/controls", label: "Controls", icon: ShieldWarning },
+	{ href: "/dashboard", label: "개요", icon: SquaresFour },
+	{ href: "/dashboard/projects", label: "프로젝트", icon: Folder },
+	{ href: "/dashboard/events", label: "이벤트", icon: Lightning },
+	{ href: "/dashboard/crons", label: "크론 작업", icon: Clock },
+	{ href: "/dashboard/controls", label: "제어 패널", icon: ShieldWarning },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -37,12 +38,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	}
 
 	return (
-		<div className="flex h-screen bg-[var(--color-background)]">
-			<aside className="w-56 border-r border-[var(--color-border)] flex flex-col">
-				<div className="p-4 border-b border-[var(--color-border)]">
+		<div className="flex h-screen bg-white">
+			<aside className="w-56 border-r border-neutral-200 flex flex-col bg-neutral-50/50">
+				<div className="p-4 border-b border-neutral-200">
 					<Link href="/dashboard" className="flex items-center gap-2">
 						<HardDrives size={20} weight="thin" />
-						<span className="font-bold text-sm tracking-tight">FlowOS Control</span>
+						<span className="font-bold text-sm tracking-tight">FlowOS 관제센터</span>
 					</Link>
 				</div>
 				<nav className="flex-1 p-2 space-y-0.5">
@@ -50,25 +51,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 						<Link
 							key={href}
 							href={href}
-							className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors ${
+							className={`relative flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors ${
 								isActive(href)
-									? "bg-[var(--color-secondary)] text-[var(--color-foreground)] font-medium"
-									: "text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-muted)]"
+									? "text-neutral-900 font-medium"
+									: "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100"
 							}`}
 						>
-							<Icon size={18} weight={isActive(href) ? "light" : "thin"} />
-							{label}
+							{isActive(href) && (
+								<motion.div
+									layoutId="activeNav"
+									className="absolute inset-0 bg-neutral-200/70 rounded-md"
+									transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+								/>
+							)}
+							<span className="relative z-10 flex items-center gap-2.5">
+								<Icon size={18} weight={isActive(href) ? "light" : "thin"} />
+								{label}
+							</span>
 						</Link>
 					))}
 				</nav>
-				<div className="p-2 border-t border-[var(--color-border)]">
+				<div className="p-2 border-t border-neutral-200">
 					<button
 						type="button"
 						onClick={handleSignOut}
-						className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-muted)] w-full transition-colors"
+						className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 w-full transition-colors"
 					>
 						<SignOut size={18} weight="thin" />
-						Sign out
+						로그아웃
 					</button>
 				</div>
 			</aside>

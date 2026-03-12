@@ -29,12 +29,12 @@ const NODE_DISPLAY: Record<string, string> = {
 function formatRelativeTime(dateStr: string): string {
 	const diff = Date.now() - new Date(dateStr).getTime();
 	const s = Math.floor(diff / 1000);
-	if (s < 60) return `${s}s ago`;
+	if (s < 60) return `${s}초 전`;
 	const m = Math.floor(s / 60);
-	if (m < 60) return `${m}m ago`;
+	if (m < 60) return `${m}분 전`;
 	const h = Math.floor(m / 60);
-	if (h < 24) return `${h}h ago`;
-	return `${Math.floor(h / 24)}d ago`;
+	if (h < 24) return `${h}시간 전`;
+	return `${Math.floor(h / 24)}일 전`;
 }
 
 function formatDuration(ms: number | null): string {
@@ -60,7 +60,7 @@ function StatusDot({ status }: { status: string }) {
 	return (
 		<span
 			className={`inline-block w-2 h-2 rounded-full ${color}`}
-			title={status}
+			title={status === "online" ? "활성" : status === "offline" ? "비활성" : status}
 		/>
 	);
 }
@@ -70,7 +70,7 @@ function CronStatusBadge({ status }: { status: string }) {
 		return (
 			<span className="inline-flex items-center gap-1 text-xs text-[var(--color-success)]">
 				<CheckCircle size={13} weight="light" />
-				success
+				성공
 			</span>
 		);
 	}
@@ -78,7 +78,7 @@ function CronStatusBadge({ status }: { status: string }) {
 		return (
 			<span className="inline-flex items-center gap-1 text-xs text-[var(--color-destructive)]">
 				<XCircle size={13} weight="light" />
-				failure
+				실패
 			</span>
 		);
 	}
@@ -86,7 +86,7 @@ function CronStatusBadge({ status }: { status: string }) {
 		return (
 			<span className="inline-flex items-center gap-1 text-xs text-[var(--color-info)]">
 				<ArrowsClockwise size={13} weight="light" />
-				running
+				실행 중
 			</span>
 		);
 	}
@@ -94,7 +94,7 @@ function CronStatusBadge({ status }: { status: string }) {
 		return (
 			<span className="inline-flex items-center gap-1 text-xs text-[var(--color-warning)]">
 				<Timer size={13} weight="light" />
-				timeout
+				시간 초과
 			</span>
 		);
 	}
@@ -133,66 +133,66 @@ export default function NodeDetailPage({
 						className="inline-flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
 					>
 						<ArrowLeft size={13} weight="thin" />
-						Back to dashboard
+						개요로 돌아가기
 					</Link>
 					<div className="flex items-center gap-3">
 						<h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
 						{role && <StatusDot status={role.status} />}
 						{role?.primary_role && (
 							<span className="inline-flex items-center rounded-full border border-[var(--color-border)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-foreground)]">
-								{role.primary_role}
+								{role.primary_role === "dev-lead" ? "개발 리드" : role.primary_role === "quality" ? "품질 관리" : role.primary_role === "coordinator" ? "코디네이터" : role.primary_role}
 							</span>
 						)}
 						{role?.is_coordinator && (
 							<span className="inline-flex items-center rounded-full bg-[var(--color-primary)] text-[var(--color-primary-foreground)] px-2.5 py-0.5 text-xs font-medium">
-								coordinator
+								코디네이터
 							</span>
 						)}
 					</div>
 					{role && (
 						<p className="text-sm text-[var(--color-muted-foreground)]">
-							Node ID: <code className="font-mono text-xs">{nodeId}</code>
+							노드 ID: <code className="font-mono text-xs">{nodeId}</code>
 						</p>
 					)}
 				</div>
 			</div>
 
 			{isLoading && (
-				<p className="text-sm text-[var(--color-muted-foreground)]">Loading node data...</p>
+				<p className="text-sm text-[var(--color-muted-foreground)]">로딩 중...</p>
 			)}
 
 			{/* Node Info Card */}
 			{role && (
 				<section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-5 space-y-4">
-					<h2 className="text-sm font-semibold">Node Configuration</h2>
+					<h2 className="text-sm font-semibold">노드 설정</h2>
 					<div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-3">
 						<div className="space-y-0.5">
 							<p className="text-xs text-[var(--color-muted-foreground)] uppercase tracking-wide">
-								Status
+								상태
 							</p>
-							<p className="font-medium capitalize">{role.status}</p>
+							<p className="font-medium capitalize">{role.status === "online" ? "활성" : role.status === "offline" ? "비활성" : role.status}</p>
 						</div>
 						<div className="space-y-0.5">
 							<p className="text-xs text-[var(--color-muted-foreground)] uppercase tracking-wide">
-								Failover Priority
+								장애 복구 우선순위
 							</p>
 							<p className="font-medium">{role.failover_priority}</p>
 						</div>
 						<div className="space-y-0.5">
 							<p className="text-xs text-[var(--color-muted-foreground)] uppercase tracking-wide">
-								Session Quota
+								세션 할당량
 							</p>
 							<p className="font-medium">{role.claude_session_quota}</p>
 						</div>
 						<div className="space-y-0.5">
 							<p className="text-xs text-[var(--color-muted-foreground)] uppercase tracking-wide">
-								Coordinator
+								코디네이터
 							</p>
-							<p className="font-medium">{role.is_coordinator ? "Yes" : "No"}</p>
+							<p className="font-medium">{role.is_coordinator ? "예" : "아니오"}</p>
 						</div>
 						<div className="space-y-0.5">
 							<p className="text-xs text-[var(--color-muted-foreground)] uppercase tracking-wide">
-								Scan Gmail
+								Gmail 스캔
 							</p>
 							<div className="flex items-center gap-1.5">
 								{role.can_scan_gmail ? (
@@ -208,12 +208,12 @@ export default function NodeDetailPage({
 										className="text-[var(--color-muted-foreground)]"
 									/>
 								)}
-								<span className="font-medium">{role.can_scan_gmail ? "Allowed" : "Denied"}</span>
+								<span className="font-medium">{role.can_scan_gmail ? "허용" : "거부"}</span>
 							</div>
 						</div>
 						<div className="space-y-0.5">
 							<p className="text-xs text-[var(--color-muted-foreground)] uppercase tracking-wide">
-								Client Comms
+								클라이언트 커뮤니케이션
 							</p>
 							<div className="flex items-center gap-1.5">
 								{role.can_send_client_comms ? (
@@ -230,22 +230,22 @@ export default function NodeDetailPage({
 									/>
 								)}
 								<span className="font-medium">
-									{role.can_send_client_comms ? "Allowed" : "Denied"}
+									{role.can_send_client_comms ? "허용" : "거부"}
 								</span>
 							</div>
 						</div>
 					</div>
 					<p className="text-xs text-[var(--color-muted-foreground)]">
-						Last updated {formatRelativeTime(role.updated_at)}
+						마지막 업데이트 {formatRelativeTime(role.updated_at)}
 					</p>
 				</section>
 			)}
 
 			{/* Heartbeat Timeline Chart */}
 			<section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-5 space-y-4">
-				<h2 className="text-sm font-semibold">Heartbeat Timeline</h2>
+				<h2 className="text-sm font-semibold">하트비트 타임라인</h2>
 				{chartBeats.length === 0 ? (
-					<p className="text-sm text-[var(--color-muted-foreground)]">No heartbeat data available.</p>
+					<p className="text-sm text-[var(--color-muted-foreground)]">하트비트 데이터 없음</p>
 				) : (
 					<div className="space-y-3">
 						{/* CPU */}
@@ -267,7 +267,7 @@ export default function NodeDetailPage({
 												backgroundColor: usageColor(hb.cpu_usage),
 												opacity: 0.85,
 											}}
-											title={`CPU: ${hb.cpu_usage !== null ? `${hb.cpu_usage.toFixed(1)}%` : "N/A"} — ${formatRelativeTime(hb.created_at)}`}
+											title={`CPU: ${hb.cpu_usage !== null ? `${hb.cpu_usage.toFixed(1)}%` : "없음"} — ${formatRelativeTime(hb.created_at)}`}
 										/>
 									);
 								})}
@@ -278,7 +278,7 @@ export default function NodeDetailPage({
 						<div className="space-y-1">
 							<div className="flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]">
 								<Database size={13} weight="thin" />
-								<span>Memory</span>
+								<span>메모리</span>
 							</div>
 							<div className="flex items-end gap-0.5 h-10">
 								{chartBeats.map((hb) => {
@@ -293,7 +293,7 @@ export default function NodeDetailPage({
 												backgroundColor: usageColor(hb.memory_usage),
 												opacity: 0.85,
 											}}
-											title={`Memory: ${hb.memory_usage !== null ? `${hb.memory_usage.toFixed(1)}%` : "N/A"} — ${formatRelativeTime(hb.created_at)}`}
+											title={`메모리: ${hb.memory_usage !== null ? `${hb.memory_usage.toFixed(1)}%` : "없음"} — ${formatRelativeTime(hb.created_at)}`}
 										/>
 									);
 								})}
@@ -304,7 +304,7 @@ export default function NodeDetailPage({
 						<div className="space-y-1">
 							<div className="flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]">
 								<HardDrive size={13} weight="thin" />
-								<span>Disk Free (GB)</span>
+								<span>디스크 여유 (GB)</span>
 							</div>
 							<div className="flex items-end gap-0.5 h-10">
 								{(() => {
@@ -333,7 +333,7 @@ export default function NodeDetailPage({
 													backgroundColor: diskColor,
 													opacity: 0.85,
 												}}
-												title={`Disk Free: ${hb.disk_free_gb !== null ? `${hb.disk_free_gb.toFixed(1)} GB` : "N/A"} — ${formatRelativeTime(hb.created_at)}`}
+												title={`디스크 여유: ${hb.disk_free_gb !== null ? `${hb.disk_free_gb.toFixed(1)} GB` : "없음"} — ${formatRelativeTime(hb.created_at)}`}
 											/>
 										);
 									});
@@ -382,7 +382,7 @@ export default function NodeDetailPage({
 								&gt; 80%
 							</div>
 							<span className="ml-auto text-xs text-[var(--color-muted-foreground)]">
-								Last {chartBeats.length} heartbeats
+								최근 {chartBeats.length}개 하트비트
 							</span>
 						</div>
 					</div>
@@ -392,7 +392,7 @@ export default function NodeDetailPage({
 			{/* Active Sessions Table */}
 			<section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-5 space-y-3">
 				<h2 className="text-sm font-semibold">
-					Active Sessions{" "}
+					활성 세션{" "}
 					{sessions && sessions.length > 0 && (
 						<span className="ml-1 inline-flex items-center justify-center rounded-full bg-[var(--color-secondary)] text-[var(--color-secondary-foreground)] px-1.5 py-0.5 text-xs font-medium">
 							{sessions.length}
@@ -400,29 +400,29 @@ export default function NodeDetailPage({
 					)}
 				</h2>
 				{!sessions || sessions.length === 0 ? (
-					<p className="text-sm text-[var(--color-muted-foreground)]">No active sessions.</p>
+					<p className="text-sm text-[var(--color-muted-foreground)]">세션 없음</p>
 				) : (
 					<div className="overflow-x-auto -mx-5">
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="border-b border-[var(--color-border)]">
 									<th className="px-5 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Type
+										유형
 									</th>
 									<th className="px-5 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Model
+										모델
 									</th>
 									<th className="px-5 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Project
+										프로젝트
 									</th>
 									<th className="px-5 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Started
+										시작 시간
 									</th>
 									<th className="px-5 py-2.5 text-right text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Est. Min
+										예상 시간(분)
 									</th>
 									<th className="px-5 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Last Activity
+										마지막 활동
 									</th>
 								</tr>
 							</thead>
@@ -458,25 +458,25 @@ export default function NodeDetailPage({
 
 			{/* Recent Cron Executions */}
 			<section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] p-5 space-y-3">
-				<h2 className="text-sm font-semibold">Recent Cron Executions</h2>
+				<h2 className="text-sm font-semibold">최근 크론 실행</h2>
 				{!crons || crons.length === 0 ? (
-					<p className="text-sm text-[var(--color-muted-foreground)]">No recent cron executions.</p>
+					<p className="text-sm text-[var(--color-muted-foreground)]">크론 실행 없음</p>
 				) : (
 					<div className="overflow-x-auto -mx-5">
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="border-b border-[var(--color-border)]">
 									<th className="px-5 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Skill
+										스킬
 									</th>
 									<th className="px-5 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Status
+										상태
 									</th>
 									<th className="px-5 py-2.5 text-left text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Started
+										시작 시간
 									</th>
 									<th className="px-5 py-2.5 text-right text-xs font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
-										Duration
+										소요 시간
 									</th>
 								</tr>
 							</thead>
