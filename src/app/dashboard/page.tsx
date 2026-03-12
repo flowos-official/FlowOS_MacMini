@@ -197,12 +197,12 @@ function MetricBar({
 }
 
 const NODE_DISPLAY: Record<string, { name: string; role: string }> = {
-  Antoni: { name: "Antoni", role: "coordinator" },
-  Kyungjini: { name: "Kyungjini", role: "dev-lead" },
-  Jaepini: { name: "Jaepini", role: "quality" },
+  antoni: { name: "Antoni", role: "coordinator" },
+  kyungjini: { name: "Kyungjini", role: "dev-lead" },
+  jaepini: { name: "Jaepini", role: "quality" },
 };
 
-const FAILOVER_CHAIN = ["Antoni", "Kyungjini", "Jaepini"];
+const FAILOVER_CHAIN = ["antoni", "kyungjini", "jaepini"];
 
 export default function DashboardPage() {
   const { data: nodeRoles = [], isLoading: rolesLoading } = useNodeRoles();
