@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.flowos.heartbeat</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/jaepini/flowos-heartbeat.sh</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>30</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <false/>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>FLOWOS_NODE_ID</key>
+    <string>jaepini</string>
+    <key>NEXT_PUBLIC_SUPABASE_URL</key>
+    <string>https://wihejwjemizbciwliqzp.supabase.co</string>
+    <key>SUPABASE_SERVICE_ROLE_KEY</key>
+    <string>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaGVqd2plbWl6YmNpd2xpcXpwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzMwOTg2MCwiZXhwIjoyMDg4ODg1ODYwfQ.Q4_y1ol2SW5NC7wU37UP5VxEl-lp5sAIUI6drquOobo</string>
+    <key>FLOWOS_NET_IFACE</key>
+    <string>en0</string>
+    <key>FLOWOS_LOG_FILE</key>
+    <string>/tmp/flowos-heartbeat.log</string>
+    <key>PATH</key>
+    <string>/usr/sbin:/usr/bin:/bin:/sbin:/opt/homebrew/bin</string>
+    <key>HOME</key>
+    <string>/Users/jaepini</string>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/tmp/flowos-heartbeat-stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/flowos-heartbeat-stderr.log</string>
+</dict>
+</plist>
