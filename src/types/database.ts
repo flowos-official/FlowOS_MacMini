@@ -11,6 +11,19 @@ export type NodeRole = {
 	updated_at: string;
 };
 
+export type ClaudePid = {
+	pid: number;
+	memory_mb: number;
+	runtime_sec: number;
+	model: string;
+};
+
+export type TopProcess = {
+	name: string;
+	cpu_pct: number;
+	mem_mb: number;
+};
+
 export type NodeHeartbeat = {
 	id: string;
 	node_id: string;
@@ -21,6 +34,53 @@ export type NodeHeartbeat = {
 	memory_usage: number | null;
 	disk_free_gb: number | null;
 	last_error: string | null;
+	created_at: string;
+	// Hardware
+	cpu_temp_c: number | null;
+	memory_wired_gb: number | null;
+	memory_compressed_gb: number | null;
+	memory_pressure: "normal" | "warn" | "critical" | null;
+	swap_used_gb: number | null;
+	uptime_seconds: number | null;
+	power_watts: number | null;
+	gpu_usage: number | null;
+	ane_usage: number | null;
+	fan_rpm: number | null;
+	disk_read_mbps: number | null;
+	disk_write_mbps: number | null;
+	disk_total_gb: number | null;
+	disk_used_gb: number | null;
+	// Network
+	net_in_mbps: number | null;
+	net_out_mbps: number | null;
+	tailscale_status: string | null;
+	tailscale_latency_ms: number | null;
+	latency_supabase_ms: number | null;
+	latency_anthropic_ms: number | null;
+	// AI
+	claude_pids: ClaudePid[] | null;
+	tokens_today: number | null;
+	cost_today_usd: number | null;
+	api_latency_ms: number | null;
+	// Processes
+	top_processes: TopProcess[] | null;
+	// OpenClaw
+	openclaw_status: string | null;
+	openclaw_version: string | null;
+	openclaw_connected_channels: number | null;
+	// Misc
+	git_repo_count: number | null;
+};
+
+export type NodeOpenclawLog = {
+	id: string;
+	node_id: string;
+	session_key: string;
+	session_type: string | null;
+	model: string | null;
+	role: string | null;
+	content: string;
+	tokens: number | null;
 	created_at: string;
 };
 

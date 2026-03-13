@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  FlowOS Heartbeat Collector — launchd agent
+  Install:
+    cp com.flowos.heartbeat.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.flowos.heartbeat.plist
+  
+  Uninstall:
+    launchctl unload ~/Library/LaunchAgents/com.flowos.heartbeat.plist
+    rm ~/Library/LaunchAgents/com.flowos.heartbeat.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.flowos.heartbeat</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/usr/local/bin/flowos-heartbeat.sh</string>
+  </array>
+
+  <!-- Run every 30 seconds -->
+  <key>StartInterval</key>
+  <integer>30</integer>
+
+  <!-- Run immediately on load -->
+  <key>RunAtLoad</key>
+  <true/>
+
+  <!-- Restart on crash -->
+  <key>KeepAlive</key>
+  <false/>
+
+  <!-- Environment variables — fill these in! -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>FLOWOS_NODE_ID</key>
+    <string>FILL_ME_NODE_ID</string>
+
+    <key>NEXT_PUBLIC_SUPABASE_URL</key>
+    <string>FILL_ME_SUPABASE_URL</string>
+
+    <key>SUPABASE_SERVICE_ROLE_KEY</key>
+    <string>FILL_ME_SERVICE_ROLE_KEY</string>
+
+    <key>FLOWOS_NET_IFACE</key>
+    <string>en0</string>
+
+    <key>FLOWOS_LOG_FILE</key>
+    <string>/tmp/flowos-heartbeat.log</string>
+
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/flowos-heartbeat-stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/flowos-heartbeat-stderr.log</string>
+
+  <key>WorkingDirectory</key>
+  <string>/tmp</string>
+</dict>
+</plist>

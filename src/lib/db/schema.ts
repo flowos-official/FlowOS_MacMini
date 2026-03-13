@@ -32,10 +32,58 @@ export const nodeHeartbeats = pgTable("node_heartbeats", {
 	status: text("status").default("alive"),
 	activeAgents: integer("active_agents").default(0),
 	activeClaudeSessions: integer("active_claude_sessions").default(0),
+	// Basic metrics (existing)
 	cpuUsage: doublePrecision("cpu_usage"),
 	memoryUsage: doublePrecision("memory_usage"),
 	diskFreeGb: doublePrecision("disk_free_gb"),
 	lastError: text("last_error"),
+	// NEW: Hardware
+	cpuTempC: doublePrecision("cpu_temp_c"),
+	memoryWiredGb: doublePrecision("memory_wired_gb"),
+	memoryCompressedGb: doublePrecision("memory_compressed_gb"),
+	memoryPressure: text("memory_pressure"), // 'normal' | 'warn' | 'critical'
+	swapUsedGb: doublePrecision("swap_used_gb"),
+	uptimeSeconds: integer("uptime_seconds"),
+	powerWatts: doublePrecision("power_watts"),
+	gpuUsage: doublePrecision("gpu_usage"),
+	aneUsage: doublePrecision("ane_usage"),
+	fanRpm: integer("fan_rpm"),
+	diskReadMbps: doublePrecision("disk_read_mbps"),
+	diskWriteMbps: doublePrecision("disk_write_mbps"),
+	diskTotalGb: doublePrecision("disk_total_gb"),
+	diskUsedGb: doublePrecision("disk_used_gb"),
+	// NEW: Network
+	netInMbps: doublePrecision("net_in_mbps"),
+	netOutMbps: doublePrecision("net_out_mbps"),
+	tailscaleStatus: text("tailscale_status"),
+	tailscaleLatencyMs: integer("tailscale_latency_ms"),
+	latencySupabaseMs: integer("latency_supabase_ms"),
+	latencyAnthropicMs: integer("latency_anthropic_ms"),
+	// NEW: AI
+	claudePids: jsonb("claude_pids"),
+	tokensToday: integer("tokens_today"),
+	costTodayUsd: doublePrecision("cost_today_usd"),
+	apiLatencyMs: integer("api_latency_ms"),
+	// NEW: Processes
+	topProcesses: jsonb("top_processes"),
+	// NEW: OpenClaw
+	openclawStatus: text("openclaw_status"),
+	openclawVersion: text("openclaw_version"),
+	openclawConnectedChannels: integer("openclaw_connected_channels"),
+	// NEW: Misc
+	gitRepoCount: integer("git_repo_count"),
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const nodeOpenclawLogs = pgTable("node_openclaw_logs", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	nodeId: text("node_id").notNull().references(() => nodeRoles.nodeId),
+	sessionKey: text("session_key").notNull(),
+	sessionType: text("session_type"), // 'main' | 'isolated' | 'cron'
+	model: text("model"),
+	role: text("role"), // 'user' | 'assistant' | 'system'
+	content: text("content").notNull(),
+	tokens: integer("tokens"),
 	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 

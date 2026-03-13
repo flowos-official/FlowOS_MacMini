@@ -14,6 +14,12 @@ import {
 	CalendarCheck,
 	Warning,
 	Skull,
+	Thermometer,
+	WifiHigh,
+	WifiSlash,
+	CurrencyDollar,
+	ArrowDown,
+	ArrowUp,
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNodeRoles, useLatestHeartbeats } from "@/lib/hooks/use-nodes";
@@ -219,11 +225,83 @@ function NodeCard({
 					</div>
 
 					{/* Metrics */}
-					<div className="relative flex flex-col gap-2 mb-4">
+					<div className="relative flex flex-col gap-2 mb-3">
 						<MetricBar label="CPU" value={cpuPct} icon={Cpu} />
 						<MetricBar label="MEM" value={memPct} icon={Memory} />
 						<MetricBar label="DSK" value={diskPct} icon={HardDrive} />
 					</div>
+
+					{/* Extended metrics row */}
+					<div className="relative flex flex-wrap gap-x-3 gap-y-1 mb-3 text-[11px] text-neutral-500">
+						{hb?.power_watts != null && (
+							<span className="flex items-center gap-0.5">
+								<Lightning size={11} weight="light" className="text-amber-400" />
+								{hb.power_watts.toFixed(0)}W
+							</span>
+						)}
+						{hb?.cpu_temp_c != null && (
+							<span className="flex items-center gap-0.5">
+								<Thermometer size={11} weight="light" className="text-orange-400" />
+								{hb.cpu_temp_c.toFixed(0)}°C
+							</span>
+						)}
+						{hb?.uptime_seconds != null && (
+							<span className="flex items-center gap-0.5">
+								<Clock size={11} weight="light" />
+								{(() => {
+									const d = Math.floor(hb.uptime_seconds / 86400);
+									const h = Math.floor((hb.uptime_seconds % 86400) / 3600);
+									return d > 0 ? `${d}일` : `${h}시간`;
+								})()}
+							</span>
+						)}
+						{hb?.memory_pressure && hb.memory_pressure !== "normal" && (
+							<span className={cn(
+								"px-1.5 py-0 rounded-full font-semibold",
+								hb.memory_pressure === "warn" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+							)}>
+								MEM {hb.memory_pressure === "warn" ? "경고" : "위험"}
+							</span>
+						)}
+						{hb?.tailscale_status && (
+							<span className="flex items-center gap-0.5">
+								{hb.tailscale_status === "Running" ? (
+									<WifiHigh size={11} weight="light" className="text-emerald-500" />
+								) : (
+									<WifiSlash size={11} weight="light" className="text-red-400" />
+								)}
+								TS
+							</span>
+						)}
+						{hb?.cost_today_usd != null && hb.cost_today_usd > 0 && (
+							<span className="flex items-center gap-0.5 text-emerald-600">
+								<CurrencyDollar size={11} weight="light" />
+								{hb.cost_today_usd.toFixed(2)}
+							</span>
+						)}
+						{hb?.openclaw_status && (
+							<span className={cn(
+								"px-1.5 py-0 rounded-full font-semibold",
+								hb.openclaw_status === "running" ? "bg-blue-100 text-blue-700" : "bg-neutral-100 text-neutral-500"
+							)}>
+								OCL
+							</span>
+						)}
+					</div>
+
+					{/* Net I/O row */}
+					{(hb?.net_in_mbps != null || hb?.net_out_mbps != null) && (
+						<div className="relative flex items-center gap-3 mb-3 text-[11px] text-neutral-500">
+							<span className="flex items-center gap-0.5 text-emerald-600">
+								<ArrowDown size={11} weight="bold" />
+								{(hb?.net_in_mbps ?? 0).toFixed(2)} MB/s
+							</span>
+							<span className="flex items-center gap-0.5 text-blue-500">
+								<ArrowUp size={11} weight="bold" />
+								{(hb?.net_out_mbps ?? 0).toFixed(2)} MB/s
+							</span>
+						</div>
+					)}
 
 					{/* Last heartbeat */}
 					<div className="relative flex items-center gap-1.5 text-xs text-neutral-400">
