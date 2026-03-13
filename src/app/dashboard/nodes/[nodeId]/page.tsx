@@ -26,7 +26,7 @@ import {
 	CaretRight,
 	CaretDown,
 	Database,
-	Activity,
+	Pulse,
 	Gauge,
 	NetworkSlash,
 } from "@phosphor-icons/react";
@@ -167,7 +167,8 @@ function StatCard({
 	accent,
 	badge,
 }: {
-	icon: React.ComponentType<{ size: number; weight: string; className?: string }>;
+	// biome-ignore lint/suspicious/noExplicitAny: phosphor icon type
+	icon: React.ComponentType<any>;
 	label: string;
 	value: React.ReactNode;
 	sub?: React.ReactNode;
@@ -552,7 +553,7 @@ export default function NodeDetailPage({
 
 				{/* GPU / ANE */}
 				<StatCard
-					icon={Activity}
+					icon={Pulse}
 					label="GPU / ANE"
 					value={
 						hb?.gpu_usage != null
@@ -717,7 +718,7 @@ export default function NodeDetailPage({
 				{/* Top Processes */}
 				<section className="rounded-xl border border-neutral-200 bg-white p-5">
 					<div className="flex items-center gap-2 mb-4">
-						<Activity size={15} weight="light" className="text-neutral-400" />
+						<Pulse size={15} weight="light" className="text-neutral-400" />
 						<h2 className="text-sm font-semibold">상위 프로세스</h2>
 					</div>
 					{!hb?.top_processes || (hb.top_processes as TopProcess[]).length === 0 ? (
@@ -820,7 +821,7 @@ export default function NodeDetailPage({
 			{/* ── Row 8: Heartbeat Timeline (mini charts) ─────────────────── */}
 			<section className="rounded-xl border border-neutral-200 bg-white p-5">
 				<div className="flex items-center gap-2 mb-4">
-					<Activity size={15} weight="light" className="text-neutral-400" />
+					<Pulse size={15} weight="light" className="text-neutral-400" />
 					<h2 className="text-sm font-semibold">하트비트 히스토리</h2>
 					<span className="ml-auto text-xs text-neutral-400">최근 {chartBeats.length}개</span>
 				</div>
