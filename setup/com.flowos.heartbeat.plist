@@ -40,10 +40,10 @@
     <string>FILL_ME_NODE_ID</string>
 
     <key>NEXT_PUBLIC_SUPABASE_URL</key>
-    <string>FILL_ME_SUPABASE_URL</string>
+    <string>https://wihejwjemizbciwliqzp.supabase.co</string>
 
     <key>SUPABASE_SERVICE_ROLE_KEY</key>
-    <string>FILL_ME_SERVICE_ROLE_KEY</string>
+    <string>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaGVqd2plbWl6YmNpd2xpcXpwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzMwOTg2MCwiZXhwIjoyMDg4ODg1ODYwfQ.Q4_y1ol2SW5NC7wU37UP5VxEl-lp5sAIUI6drquOobo</string>
 
     <key>FLOWOS_NET_IFACE</key>
     <string>en0</string>
