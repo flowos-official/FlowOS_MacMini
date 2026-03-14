@@ -267,7 +267,14 @@ function NodeCard({
 					<div className="relative mb-4">
 						<div className="flex justify-between text-xs text-neutral-500 mb-1.5">
 							<span>Claude 세션</span>
-							<span className="font-semibold text-neutral-800 tabular-nums">
+							<span className={cn(
+								"font-semibold tabular-nums",
+								sessionCount > quota
+									? "text-red-600"
+									: sessionCount === quota && quota > 0
+										? "text-amber-600"
+										: "text-neutral-800",
+							)}>
 								{sessionCount} / {quota}
 							</span>
 						</div>
@@ -275,14 +282,16 @@ function NodeCard({
 							<motion.div
 								className={cn(
 									"h-full rounded-full",
-									sessionCount >= quota
+									sessionCount > quota
 										? "bg-red-500"
-										: sessionCount > 0
-											? "bg-blue-500"
-											: "bg-neutral-200",
+										: sessionCount === quota && quota > 0
+											? "bg-amber-500"
+											: sessionCount > 0
+												? "bg-blue-500"
+												: "bg-neutral-200",
 								)}
 								initial={{ width: 0 }}
-								animate={{ width: quota > 0 ? `${(sessionCount / quota) * 100}%` : "0%" }}
+								animate={{ width: quota > 0 ? `${Math.min(100, (sessionCount / quota) * 100)}%` : "0%" }}
 								transition={{ duration: 0.8, ease: "easeOut" }}
 							/>
 						</div>
