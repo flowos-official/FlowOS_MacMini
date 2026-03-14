@@ -39,7 +39,7 @@ function useLogsQuery(nodeFilter: string, statusFilter: string) {
 			if (error) throw error;
 			return data as AgentEvent[];
 		},
-		refetchInterval: 5_000,
+		refetchInterval: 30_000,
 	});
 }
 
@@ -87,7 +87,7 @@ export default function LogsPage() {
 					<div>
 						<h1 className="text-2xl font-bold tracking-tight">Logs</h1>
 						<p className="text-sm text-neutral-500">
-							Agent 이벤트 실시간 로그
+							Agent 이벤트 로그 · 30초 자동 새로고침
 							{dataUpdatedAt > 0 && (
 								<span className="ml-2 text-neutral-400">
 									· 업데이트: {new Date(dataUpdatedAt).toLocaleTimeString("ko-KR")}
@@ -108,8 +108,9 @@ export default function LogsPage() {
 						className="text-sm border border-neutral-200 rounded-lg px-2.5 py-1.5 bg-white outline-none focus:border-blue-400"
 					>
 						<option value="all">전체</option>
-						<option value="antoni">Antoni</option>
+						<option value="Antoni">Antoni</option>
 						<option value="kyungjini">Kyungjini</option>
+						<option value="jaepini">Jaepini</option>
 					</select>
 				</div>
 				<div className="flex items-center gap-2">
@@ -121,7 +122,9 @@ export default function LogsPage() {
 					>
 						<option value="all">전체</option>
 						<option value="pending">pending</option>
+						<option value="running">running</option>
 						<option value="done">done</option>
+						<option value="completed">completed</option>
 						<option value="failed">failed</option>
 					</select>
 				</div>
