@@ -29,6 +29,7 @@ import { useActiveSessions } from "@/lib/hooks/use-sessions";
 import { useAgentEvents } from "@/lib/hooks/use-events";
 import { useFailoverEvents } from "@/lib/hooks/use-events";
 import { PulseBeacon } from "@/components/ui/pulse-beacon";
+import { ActiveSessionsPanel } from "@/components/dashboard/active-sessions-panel";
 import { cn } from "@/lib/utils";
 import type {
 	NodeRole,
@@ -451,7 +452,7 @@ export default function DashboardPage() {
 
 			{/* Active Sessions + Recent Events */}
 			<div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8">
-				{/* Active Sessions */}
+				{/* Active Sessions — realtime per-node session monitor */}
 				<motion.section
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -461,52 +462,7 @@ export default function DashboardPage() {
 					<h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-4">
 						활성 세션
 					</h2>
-					<div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
-						<div className="px-5 py-4 border-b border-neutral-100 flex items-center gap-3">
-							<Users size={18} weight="light" className="text-blue-500" />
-							<span className="font-bold text-xl tabular-nums">{activeSessions.length}</span>
-							<span className="text-neutral-500 text-sm">개 활성 세션</span>
-						</div>
-						{activeSessions.length === 0 ? (
-							<div className="px-5 py-10 text-center text-neutral-400 text-sm">
-								현재 활성 세션 없음
-							</div>
-						) : (
-							<div className="max-h-80 overflow-y-auto divide-y divide-neutral-100">
-								{activeSessions.map((s: ActiveSession, i: number) => (
-									<motion.div
-										key={s.id ?? i}
-										initial={{ opacity: 0, x: -10 }}
-										animate={{ opacity: 1, x: 0 }}
-										transition={{ delay: i * 0.05 }}
-										className="px-5 py-3"
-									>
-										<div className="flex justify-between items-center">
-											<span className="font-semibold text-sm">{s.node_id ?? "—"}</span>
-											<span className="text-[11px] text-neutral-400">{timeAgo(s.started_at)}</span>
-										</div>
-										<div className="flex gap-2 flex-wrap mt-1">
-											{s.project_id && (
-												<span className="text-[11px] bg-neutral-100 rounded px-1.5 py-0.5 text-neutral-600">
-													{s.project_id}
-												</span>
-											)}
-											{s.session_type && (
-												<span className="text-[11px] bg-neutral-100 rounded px-1.5 py-0.5 text-neutral-600">
-													{s.session_type}
-												</span>
-											)}
-											{s.model && (
-												<span className="text-[11px] bg-neutral-100 rounded px-1.5 py-0.5 text-neutral-600">
-													{s.model}
-												</span>
-											)}
-										</div>
-									</motion.div>
-								))}
-							</div>
-						)}
-					</div>
+					<ActiveSessionsPanel />
 				</motion.section>
 
 				{/* Recent Events */}

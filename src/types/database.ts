@@ -126,6 +126,12 @@ export type ActiveSession = {
 	started_at: string;
 	estimated_minutes: number;
 	last_activity_at: string;
+	// Session monitor columns (migration 002)
+	session_key: string | null;
+	display_name: string | null;
+	total_tokens: number | null;
+	context_tokens: number | null;
+	channel: string | null;
 };
 
 export type CronExecution = {
