@@ -12,7 +12,10 @@ SUPABASE_URL="https://wihejwjemizbciwliqzp.supabase.co"
 SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaGVqd2plbWl6YmNpd2xpcXpwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzMwOTg2MCwiZXhwIjoyMDg4ODg1ODYwfQ.Q4_y1ol2SW5NC7wU37UP5VxEl-lp5sAIUI6drquOobo"
 
 KYUNGJINI_TOKEN="4020bd24cc5b33483c93a9d45e68e642d3e63de1fb00c984"
-KYUNGJINI_GATEWAY="http://127.0.0.1:28790"
+# NOTE: Kyungjini gateway port is 18790 (confirmed from openclaw.json)
+# From Antoni machine, use Tailscale IP: http://100.103.230.68:18790
+# (update this if the bind address changes or port differs)
+KYUNGJINI_GATEWAY="http://100.103.230.68:18790"
 
 # Read Antoni token from config
 OPENCLAW_JSON="${HOME}/.openclaw/openclaw.json"
@@ -51,14 +54,22 @@ fetch_sessions() {
   }
 
   # Parse sessions array from response
+  # Response format: {"ok":true,"result":{"details":{"sessions":[...]}}}
   python3 -c "
 import json, sys
 try:
-    d = json.loads('''${response}''')
-    print(json.dumps(d.get('sessions', [])))
+    raw = sys.stdin.read()
+    d = json.loads(raw)
+    # Try result.details.sessions first (OpenClaw gateway format)
+    sessions = (d.get('result') or {}).get('details', {}).get('sessions', None)
+    if sessions is None:
+        # Fallback: top-level sessions key
+        sessions = d.get('sessions', [])
+    print(json.dumps(sessions))
 except Exception as e:
+    sys.stderr.write(f'parse error: {e}\n')
     print('[]')
-" 2>/dev/null || echo "[]"
+" <<< "\${response}" 2>/dev/null || echo "[]"
 }
 
 # sync_node NODE_ID SESSIONS_JSON
@@ -80,7 +91,7 @@ sync_node() {
 
   # 2. Count sessions
   local count
-  count=$(python3 -c "import json,sys; s=json.loads('''${sessions_json}'''); print(len(s))" 2>/dev/null || echo "0")
+  count=$(python3 -c "import json,sys; s=json.loads(sys.argv[1]); print(len(s))" "$sessions_json" 2>/dev/null || echo "0")
 
   if [[ "$count" -eq 0 ]]; then
     echo "$LOG_PREFIX INFO: $node_id — 0 sessions (cleared)" >&2
@@ -93,12 +104,13 @@ sync_node() {
 import json, sys
 from datetime import datetime, timezone
 
-sessions = json.loads('''${sessions_json}''')
+sessions = json.loads(sys.argv[1])
+node_id = sys.argv[2]
 now = datetime.now(timezone.utc).isoformat()
 rows = []
 for s in sessions:
     rows.append({
-        'node_id': '${node_id}',
+        'node_id': node_id,
         'session_key': s.get('key', ''),
         'display_name': s.get('displayName', ''),
         'session_type': s.get('kind', 'other'),
@@ -111,7 +123,7 @@ for s in sessions:
         'estimated_minutes': 60,
     })
 print(json.dumps(rows))
-" 2>/dev/null)
+" "$sessions_json" "$node_id" 2>/dev/null)
 
   if [[ -z "$insert_payload" ]] || [[ "$insert_payload" == "[]" ]]; then
     echo "$LOG_PREFIX WARN: empty insert payload for $node_id" >&2
