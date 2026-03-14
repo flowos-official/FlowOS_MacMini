@@ -156,7 +156,7 @@ export default function AnalyticsPage() {
 							<YAxis unit="%" tick={{ fontSize: 11, fill: "#9ca3af" }} domain={[0, 100]} />
 							<Tooltip
 								contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12 }}
-								formatter={(v: number) => [`${v}%`]}
+								formatter={(v: unknown) => [`${v}%`]}
 							/>
 							<Legend wrapperStyle={{ fontSize: 12 }} />
 							<Line type="monotone" dataKey="anton" name="Antoni" stroke="#3b82f6" strokeWidth={2} dot={false} connectNulls />
@@ -184,7 +184,7 @@ export default function AnalyticsPage() {
 							<YAxis unit="%" tick={{ fontSize: 11, fill: "#9ca3af" }} domain={[0, 100]} />
 							<Tooltip
 								contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12 }}
-								formatter={(v: number) => [`${v}%`]}
+								formatter={(v: unknown) => [`${v}%`]}
 							/>
 							<Legend wrapperStyle={{ fontSize: 12 }} />
 							<Line type="monotone" dataKey="anton" name="Antoni" stroke="#8b5cf6" strokeWidth={2} dot={false} connectNulls />
