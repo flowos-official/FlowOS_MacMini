@@ -21,6 +21,8 @@ import {
 	ArrowDown,
 	ArrowUp,
 } from "@phosphor-icons/react";
+import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { useNodeHeartbeats } from "@/lib/hooks/use-nodes";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNodeRoles, useLatestHeartbeats } from "@/lib/hooks/use-nodes";
 import { useActiveSessions } from "@/lib/hooks/use-sessions";
@@ -102,6 +104,31 @@ function MetricBar({
 			<span className="text-[11px] text-neutral-500 w-9 text-right tabular-nums">
 				{pct.toFixed(0)}%
 			</span>
+		</div>
+	);
+}
+
+function NodeSparkline({ nodeId }: { nodeId: string }) {
+	const { data: hbs = [] } = useNodeHeartbeats(nodeId);
+	const points = hbs
+		.slice(0, 10)
+		.reverse()
+		.map((h, i) => ({ i, v: h.cpu_usage ?? 0 }));
+	if (points.length < 2) return null;
+	return (
+		<div className="h-10 w-full">
+			<ResponsiveContainer width="100%" height={40}>
+				<LineChart data={points}>
+					<Line
+						type="monotone"
+						dataKey="v"
+						stroke="#3b82f6"
+						strokeWidth={1.5}
+						dot={false}
+						isAnimationActive={false}
+					/>
+				</LineChart>
+			</ResponsiveContainer>
 		</div>
 	);
 }
@@ -302,6 +329,12 @@ function NodeCard({
 							</span>
 						</div>
 					)}
+
+					{/* CPU Sparkline */}
+					<div className="relative mb-3">
+						<div className="text-[10px] text-neutral-400 mb-1">CPU 추이</div>
+						<NodeSparkline nodeId={nodeId} />
+					</div>
 
 					{/* Last heartbeat */}
 					<div className="relative flex items-center gap-1.5 text-xs text-neutral-400">
