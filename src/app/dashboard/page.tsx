@@ -38,6 +38,43 @@ import type {
 	FailoverEvent,
 } from "@/types/database";
 
+const NODE_ACCENT: Record<string, string> = {
+	antoni: "text-blue-600",
+	kyungjini: "text-green-600",
+	jaepini: "text-purple-600",
+};
+
+const NODE_BG: Record<string, string> = {
+	antoni: "bg-blue-50",
+	kyungjini: "bg-green-50",
+	jaepini: "bg-purple-50",
+};
+
+function parseSessionType(key: string): { type: string; detail: string | null } {
+	// agent:main:main → {type:"main", detail:null}
+	// agent:main:slack:channel:C123 → {type:"slack", detail:"#C123"}
+	// agent:main:subagent:xxx → {type:"subagent", detail:null}
+	const parts = key.split(":");
+	if (parts.length >= 3) {
+		const kind = parts[2];
+		if (kind === "main") return { type: "main", detail: null };
+		if (kind === "slack") {
+			const ch = parts[4] ?? parts[3] ?? null;
+			return { type: "slack", detail: ch ? `#${ch}` : null };
+		}
+		if (kind === "subagent") return { type: "subagent", detail: parts[3] ?? null };
+		return { type: kind, detail: parts.slice(3).join(":") || null };
+	}
+	return { type: key, detail: null };
+}
+
+function formatModel(model: string): string {
+	if (model.includes("claude-sonnet")) return "claude-sonnet";
+	if (model.includes("claude-opus")) return "claude-opus";
+	if (model.includes("claude-haiku")) return "claude-haiku";
+	return model.split("/").pop() ?? model;
+}
+
 function timeAgo(date: string | Date | null | undefined): string {
 	if (!date) return "없음";
 	const now = new Date();
@@ -472,38 +509,54 @@ export default function DashboardPage() {
 								현재 활성 세션 없음
 							</div>
 						) : (
-							<div className="max-h-80 overflow-y-auto divide-y divide-neutral-100">
-								{activeSessions.map((s: ActiveSession, i: number) => (
-									<motion.div
-										key={s.id ?? i}
-										initial={{ opacity: 0, x: -10 }}
-										animate={{ opacity: 1, x: 0 }}
-										transition={{ delay: i * 0.05 }}
-										className="px-5 py-3"
-									>
-										<div className="flex justify-between items-center">
-											<span className="font-semibold text-sm">{s.node_id ?? "—"}</span>
-											<span className="text-[11px] text-neutral-400">{timeAgo(s.started_at)}</span>
+							<div className="max-h-80 overflow-y-auto">
+								{FAILOVER_CHAIN.map((nodeId) => {
+									const nodeSessions = activeSessions.filter((s) => s.node_id === nodeId);
+									if (nodeSessions.length === 0) return null;
+									const alive = isNodeAlive(heartbeatMap[nodeId]);
+									const accentClass = NODE_ACCENT[nodeId] ?? "text-neutral-700";
+									const bgClass = NODE_BG[nodeId] ?? "bg-neutral-50";
+									return (
+										<div key={nodeId} className="border-b border-neutral-100 last:border-0">
+											<div className={cn("px-5 py-2.5 flex items-center gap-2", bgClass)}>
+												<PulseBeacon alive={alive} size={8} />
+												<span className={cn("font-bold text-sm", accentClass)}>
+													{NODE_DISPLAY[nodeId]?.name ?? nodeId}
+												</span>
+												<span className="ml-auto text-[11px] text-neutral-400">
+													{nodeSessions.length}개 세션
+												</span>
+											</div>
+											<div>
+												{nodeSessions.map((s: ActiveSession, si: number) => {
+													const parsed = parseSessionType(s.session_type ?? "");
+													const isLast = si === nodeSessions.length - 1;
+													const prefix = isLast ? "└─" : "├─";
+													return (
+														<motion.div
+															key={s.id ?? si}
+															initial={{ opacity: 0, x: -8 }}
+															animate={{ opacity: 1, x: 0 }}
+															transition={{ delay: si * 0.04 }}
+															className="px-5 py-2 flex items-center gap-2 hover:bg-neutral-50"
+														>
+															<span className="text-neutral-300 text-xs font-mono shrink-0">{prefix}</span>
+															<span className="text-xs font-semibold text-neutral-700 w-14 shrink-0">{parsed.type}</span>
+															{parsed.detail && (
+																<span className="text-xs text-neutral-500 shrink-0">{parsed.detail}</span>
+															)}
+															{s.model && (
+																<span className="ml-auto text-[11px] text-neutral-400 shrink-0">
+																	{formatModel(s.model)}
+																</span>
+															)}
+														</motion.div>
+													);
+												})}
+											</div>
 										</div>
-										<div className="flex gap-2 flex-wrap mt-1">
-											{s.project_id && (
-												<span className="text-[11px] bg-neutral-100 rounded px-1.5 py-0.5 text-neutral-600">
-													{s.project_id}
-												</span>
-											)}
-											{s.session_type && (
-												<span className="text-[11px] bg-neutral-100 rounded px-1.5 py-0.5 text-neutral-600">
-													{s.session_type}
-												</span>
-											)}
-											{s.model && (
-												<span className="text-[11px] bg-neutral-100 rounded px-1.5 py-0.5 text-neutral-600">
-													{s.model}
-												</span>
-											)}
-										</div>
-									</motion.div>
-								))}
+									);
+								})}
 							</div>
 						)}
 					</div>

@@ -60,7 +60,23 @@ function buildChartData(heartbeats: Heartbeat[], metric: "cpu_usage" | "memory_u
 			time: new Date(ts).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
 			anton: nodes.antoni != null ? +nodes.antoni.toFixed(1) : null,
 			kyungjini: nodes.kyungjini != null ? +nodes.kyungjini.toFixed(1) : null,
+			jaepini: nodes.jaepini != null ? +nodes.jaepini.toFixed(1) : null,
 		}));
+}
+
+function uptimePctByNode(heartbeats: Heartbeat[]): Record<string, string> {
+	const counts: Record<string, { alive: number; total: number }> = {};
+	for (const hb of heartbeats) {
+		const id = hb.node_id;
+		if (!counts[id]) counts[id] = { alive: 0, total: 0 };
+		counts[id].total++;
+		if (hb.status === "alive") counts[id].alive++;
+	}
+	const result: Record<string, string> = {};
+	for (const [id, c] of Object.entries(counts)) {
+		result[id] = c.total > 0 ? ((c.alive / c.total) * 100).toFixed(1) : "—";
+	}
+	return result;
 }
 
 function StatCard({
@@ -92,6 +108,7 @@ export default function AnalyticsPage() {
 
 	const cpuData = buildChartData(heartbeats, "cpu_usage");
 	const memData = buildChartData(heartbeats, "memory_usage");
+	const uptimeByNode = uptimePctByNode(heartbeats);
 
 	const aliveCount = heartbeats.filter((h) => h.status === "alive").length;
 	const uptimePct = heartbeats.length > 0 ? ((aliveCount / heartbeats.length) * 100).toFixed(1) : "—";
@@ -135,7 +152,22 @@ export default function AnalyticsPage() {
 				<StatCard label="평균 CPU" value={avgCpu} unit="%" icon={Cpu} color="bg-blue-50 text-blue-600" />
 				<StatCard label="평균 메모리" value={avgMem} unit="%" icon={Memory} color="bg-purple-50 text-purple-600" />
 				<StatCard label="평균 여유 디스크" value={avgDisk} unit="GB" icon={HardDrive} color="bg-emerald-50 text-emerald-600" />
-				<StatCard label="업타임" value={uptimePct} unit="%" icon={CheckCircle} color="bg-amber-50 text-amber-600" />
+				<StatCard label="전체 업타임" value={uptimePct} unit="%" icon={CheckCircle} color="bg-amber-50 text-amber-600" />
+			</div>
+
+			{/* Per-node uptime row */}
+			<div className="grid grid-cols-3 gap-4 mb-8">
+				{[
+					{ id: "Antoni", key: "Antoni", color: "bg-blue-50 text-blue-600" },
+					{ id: "Kyungjini", key: "kyungjini", color: "bg-green-50 text-green-600" },
+					{ id: "Jaepini", key: "jaepini", color: "bg-purple-50 text-purple-600" },
+				].map(({ id, key, color }) => (
+					<div key={id} className="rounded-2xl border border-neutral-200 bg-white p-5">
+						<div className="text-xs font-semibold text-neutral-500 mb-1">{id} 업타임</div>
+						<div className="text-2xl font-bold tabular-nums">{uptimeByNode[key] ?? "—"}<span className="text-base font-normal text-neutral-400 ml-1">%</span></div>
+						<div className={`inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded-full ${color}`}>24h</div>
+					</div>
+				))}
 			</div>
 
 			{/* CPU Chart */}
@@ -157,10 +189,12 @@ export default function AnalyticsPage() {
 							<Tooltip
 								contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12 }}
 								formatter={(v: unknown) => [`${v}%`]}
+
 							/>
 							<Legend wrapperStyle={{ fontSize: 12 }} />
-							<Line type="monotone" dataKey="anton" name="Antoni" stroke="#3b82f6" strokeWidth={2} dot={false} connectNulls />
-							<Line type="monotone" dataKey="kyungjini" name="Kyungjini" stroke="#10b981" strokeWidth={2} dot={false} connectNulls />
+							<Line type="monotone" dataKey="anton" name="Antoni" stroke="#2563eb" strokeWidth={2} dot={false} connectNulls />
+							<Line type="monotone" dataKey="kyungjini" name="Kyungjini" stroke="#16a34a" strokeWidth={2} dot={false} connectNulls />
+							<Line type="monotone" dataKey="jaepini" name="Jaepini" stroke="#9333ea" strokeWidth={2} dot={false} connectNulls />
 						</LineChart>
 					</ResponsiveContainer>
 				)}
@@ -185,10 +219,12 @@ export default function AnalyticsPage() {
 							<Tooltip
 								contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12 }}
 								formatter={(v: unknown) => [`${v}%`]}
+
 							/>
 							<Legend wrapperStyle={{ fontSize: 12 }} />
-							<Line type="monotone" dataKey="anton" name="Antoni" stroke="#8b5cf6" strokeWidth={2} dot={false} connectNulls />
-							<Line type="monotone" dataKey="kyungjini" name="Kyungjini" stroke="#f59e0b" strokeWidth={2} dot={false} connectNulls />
+							<Line type="monotone" dataKey="anton" name="Antoni" stroke="#2563eb" strokeWidth={2} dot={false} connectNulls />
+							<Line type="monotone" dataKey="kyungjini" name="Kyungjini" stroke="#16a34a" strokeWidth={2} dot={false} connectNulls />
+							<Line type="monotone" dataKey="jaepini" name="Jaepini" stroke="#9333ea" strokeWidth={2} dot={false} connectNulls />
 						</LineChart>
 					</ResponsiveContainer>
 				)}
