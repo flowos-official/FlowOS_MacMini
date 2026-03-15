@@ -113,14 +113,19 @@ export default function AnalyticsPage() {
 	const aliveCount = heartbeats.filter((h) => h.status === "alive").length;
 	const uptimePct = heartbeats.length > 0 ? ((aliveCount / heartbeats.length) * 100).toFixed(1) : "—";
 
-	const avgCpu = heartbeats.length > 0
-		? (heartbeats.reduce((s, h) => s + (h.cpu_usage ?? 0), 0) / heartbeats.length).toFixed(1)
+	// Only include heartbeats with actual values (not null/0)
+	const cpuValues = heartbeats.map((h) => h.cpu_usage).filter((v): v is number => v != null && v > 0);
+	const memValues = heartbeats.map((h) => h.memory_usage).filter((v): v is number => v != null && v > 0);
+	const diskValues = heartbeats.map((h) => h.disk_free_gb).filter((v): v is number => v != null && v > 0);
+
+	const avgCpu = cpuValues.length > 0
+		? (cpuValues.reduce((s, v) => s + v, 0) / cpuValues.length).toFixed(1)
 		: "—";
-	const avgMem = heartbeats.length > 0
-		? (heartbeats.reduce((s, h) => s + (h.memory_usage ?? 0), 0) / heartbeats.length).toFixed(1)
+	const avgMem = memValues.length > 0
+		? (memValues.reduce((s, v) => s + v, 0) / memValues.length).toFixed(1)
 		: "—";
-	const avgDisk = heartbeats.length > 0
-		? (heartbeats.reduce((s, h) => s + (h.disk_free_gb ?? 0), 0) / heartbeats.length).toFixed(0)
+	const avgDisk = diskValues.length > 0
+		? (diskValues.reduce((s, v) => s + v, 0) / diskValues.length).toFixed(0)
 		: "—";
 
 	if (isLoading) {
@@ -158,7 +163,7 @@ export default function AnalyticsPage() {
 			{/* Per-node uptime row */}
 			<div className="grid grid-cols-3 gap-4 mb-8">
 				{[
-					{ id: "Antoni", key: "Antoni", color: "bg-blue-50 text-blue-600" },
+					{ id: "Antoni", key: "antoni", color: "bg-blue-50 text-blue-600" },
 					{ id: "Kyungjini", key: "kyungjini", color: "bg-green-50 text-green-600" },
 					{ id: "Jaepini", key: "jaepini", color: "bg-purple-50 text-purple-600" },
 				].map(({ id, key, color }) => (
