@@ -4,6 +4,8 @@ import {
 	ArrowDown,
 	ArrowRight,
 	ArrowUp,
+	ArrowsClockwise,
+	Monitor,
 	CalendarCheck,
 	Clock,
 	Cpu,
@@ -29,6 +31,7 @@ import { useAgentEvents, useFailoverEvents } from "@/lib/hooks/use-events";
 import { useLatestHeartbeats, useNodeHeartbeats, useNodeRoles } from "@/lib/hooks/use-nodes";
 import { useActiveSessions } from "@/lib/hooks/use-sessions";
 import { useActiveTaskCounts } from "@/lib/hooks/use-tasks";
+import { useWorkers } from "@/lib/hooks/use-workers";
 import { cn } from "@/lib/utils";
 import type {
 	ActiveSession,
@@ -437,6 +440,7 @@ export default function DashboardPage() {
 	const coordinator = nodeRoles.find((n) => n.is_coordinator);
 	const aliveCount = FAILOVER_CHAIN.filter((id) => isNodeAlive(heartbeatMap[id])).length;
 	const { counts: taskCounts, total: totalActiveTasks } = useActiveTaskCounts();
+	const { data: workersData, isFetching: workersFetching } = useWorkers();
 
 	return (
 		<div className="max-w-[1280px] mx-auto">
@@ -549,6 +553,110 @@ export default function DashboardPage() {
 					</div>
 				)}
 			</section>
+
+			{/* Worker Activity Panel */}
+			<motion.section
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.4, delay: 0.28 }}
+				className="mb-8"
+			>
+				<div className="flex items-center justify-between mb-4">
+					<h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400">
+						Worker Activity
+					</h2>
+					<div className="flex items-center gap-2 text-[11px] text-neutral-400">
+						{workersFetching && (
+							<ArrowsClockwise size={12} weight="light" className="animate-spin" />
+						)}
+						{workersData?.fetchedAt && (
+							<span>
+								{new Date(workersData.fetchedAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+							</span>
+						)}
+					</div>
+				</div>
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					{(workersData?.nodes ?? [
+						{ nodeId: "Antoni" },
+						{ nodeId: "Kyungjini" },
+						{ nodeId: "Jaepini" },
+					]).map((node) => {
+						const isOffline = "error" in node && node.error === "offline";
+						const sessions = "sessions" in node ? (node.sessions ?? []) : [];
+						const sessionColors: Record<string, { bg: string; text: string }> = {
+							main: { bg: "#dbeafe", text: "#1d4ed8" },
+							"worker-1": { bg: "#dcfce7", text: "#15803d" },
+							"worker-2": { bg: "#f3e8ff", text: "#7e22ce" },
+						};
+
+						return (
+							<div
+								key={node.nodeId}
+								className={cn(
+									"rounded-2xl border p-4",
+									isOffline
+										? "border-neutral-100 bg-neutral-50"
+										: "border-neutral-200 bg-white",
+								)}
+							>
+								{/* Card header */}
+								<div className="flex items-center gap-2 mb-3">
+									<Monitor size={15} weight="thin" className={isOffline ? "text-neutral-300" : "text-neutral-500"} />
+									<span className={cn("font-semibold text-sm", isOffline && "text-neutral-400")}>
+										{node.nodeId}
+									</span>
+									{isOffline && (
+										<span className="ml-auto text-[10px] text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full">
+											Offline
+										</span>
+									)}
+								</div>
+
+								{isOffline ? (
+									<p className="text-xs text-neutral-400 text-center py-3">연결 없음</p>
+								) : sessions.length === 0 ? (
+									<p className="text-xs text-neutral-400 text-center py-3">활성 세션 없음</p>
+								) : (
+									<div className="flex flex-col gap-2">
+										{sessions.map((s) => {
+											const colors = sessionColors[s.label] ?? { bg: "#f3f4f6", text: "#6b7280" };
+											const isActive = s.minutesAgo !== null && s.minutesAgo < 3;
+											return (
+												<div key={s.key} className="flex items-start gap-2">
+													{/* Active dot */}
+													<span
+														className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0"
+														style={{ background: isActive ? "#22c55e" : "#d1d5db" }}
+													/>
+													<div className="flex-1 min-w-0">
+														<div className="flex items-center gap-1.5 mb-0.5">
+															<span
+																className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+																style={{ background: colors.bg, color: colors.text }}
+															>
+																{s.label}
+															</span>
+															{s.minutesAgo !== null && (
+																<span className="text-[10px] text-neutral-400">
+																	{s.minutesAgo}m ago
+																</span>
+															)}
+														</div>
+														<p className="text-[11px] text-neutral-500 truncate">
+															{s.lastMessage || "idle"}
+														</p>
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								)}
+							</div>
+						);
+					})}
+				</div>
+			</motion.section>
 
 			{/* Active Sessions + Recent Events */}
 			<div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8">
