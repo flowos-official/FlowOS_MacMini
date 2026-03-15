@@ -578,9 +578,9 @@ export default function DashboardPage() {
 				</div>
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 					{(workersData?.nodes ?? [
-						{ nodeId: "Antoni" },
-						{ nodeId: "Kyungjini" },
-						{ nodeId: "Jaepini" },
+						{ nodeId: "antoni" },
+						{ nodeId: "kyungjini" },
+						{ nodeId: "jaepini" },
 					]).map((node) => {
 						const isOffline = "error" in node && node.error === "offline";
 						const sessions = "sessions" in node ? (node.sessions ?? []) : [];
