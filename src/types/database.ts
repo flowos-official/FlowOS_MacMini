@@ -1,3 +1,21 @@
+export type AgentTask = {
+	id: string;
+	title: string;
+	description: string | null;
+	assignee: "kyungjini" | "jaepini" | "antoni";
+	status: "pending" | "running" | "done" | "failed" | "cancelled";
+	priority: "urgent" | "normal" | "background";
+	slack_channel: string | null;
+	github_pr: string | null;
+	result_summary: string | null;
+	error_message: string | null;
+	dispatched_by: string | null;
+	session_id: string | null;
+	created_at: string;
+	started_at: string | null;
+	completed_at: string | null;
+};
+
 export type NodeRole = {
 	node_id: string;
 	display_name: string;

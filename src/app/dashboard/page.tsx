@@ -1,41 +1,41 @@
 "use client";
 
-import Link from "next/link";
 import {
-	ShieldCheck,
-	Cpu,
-	HardDrive,
-	Memory,
-	Clock,
-	Pulse,
+	ArrowDown,
 	ArrowRight,
-	Lightning,
-	Users,
+	ArrowUp,
 	CalendarCheck,
-	Warning,
+	Clock,
+	Cpu,
+	CurrencyDollar,
+	HardDrive,
+	Lightning,
+	ListChecks,
+	Memory,
+	Pulse,
+	ShieldCheck,
 	Skull,
 	Thermometer,
+	Users,
+	Warning,
 	WifiHigh,
 	WifiSlash,
-	CurrencyDollar,
-	ArrowDown,
-	ArrowUp,
 } from "@phosphor-icons/react";
-import { LineChart, Line, ResponsiveContainer } from "recharts";
-import { useNodeHeartbeats } from "@/lib/hooks/use-nodes";
-import { motion, AnimatePresence } from "framer-motion";
-import { useNodeRoles, useLatestHeartbeats } from "@/lib/hooks/use-nodes";
-import { useActiveSessions } from "@/lib/hooks/use-sessions";
-import { useAgentEvents } from "@/lib/hooks/use-events";
-import { useFailoverEvents } from "@/lib/hooks/use-events";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { Line, LineChart, ResponsiveContainer } from "recharts";
 import { PulseBeacon } from "@/components/ui/pulse-beacon";
+import { useAgentEvents, useFailoverEvents } from "@/lib/hooks/use-events";
+import { useLatestHeartbeats, useNodeHeartbeats, useNodeRoles } from "@/lib/hooks/use-nodes";
+import { useActiveSessions } from "@/lib/hooks/use-sessions";
+import { useActiveTaskCounts } from "@/lib/hooks/use-tasks";
 import { cn } from "@/lib/utils";
 import type {
-	NodeRole,
-	NodeHeartbeat,
 	ActiveSession,
 	AgentEvent,
 	FailoverEvent,
+	NodeHeartbeat,
+	NodeRole,
 } from "@/types/database";
 
 function timeAgo(date: string | Date | null | undefined): string {
@@ -80,15 +80,14 @@ function MetricBar({
 }: {
 	label: string;
 	value: number | null | undefined;
-	icon: React.ComponentType<{ size: number; weight: "thin" | "light" | "regular" | "bold" | "fill" | "duotone"; className?: string }>;
+	icon: React.ComponentType<{
+		size: number;
+		weight: "thin" | "light" | "regular" | "bold" | "fill" | "duotone";
+		className?: string;
+	}>;
 }) {
 	const pct = value ?? 0;
-	const color =
-		pct > 85
-			? "bg-red-500"
-			: pct > 60
-				? "bg-amber-500"
-				: "bg-emerald-500";
+	const color = pct > 85 ? "bg-red-500" : pct > 60 ? "bg-amber-500" : "bg-emerald-500";
 	return (
 		<div className="flex items-center gap-2">
 			<Icon size={13} weight="light" className="text-neutral-400 shrink-0" />
@@ -217,9 +216,7 @@ function NodeCard({
 						<span
 							className={cn(
 								"text-[11px] font-medium px-2.5 py-0.5 rounded-full",
-								alive
-									? "bg-emerald-100 text-emerald-700"
-									: "bg-red-100 text-red-700",
+								alive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700",
 							)}
 						>
 							{alive ? "활성" : "비활성"}
@@ -283,10 +280,14 @@ function NodeCard({
 							</span>
 						)}
 						{hb?.memory_pressure && hb.memory_pressure !== "normal" && (
-							<span className={cn(
-								"px-1.5 py-0 rounded-full font-semibold",
-								hb.memory_pressure === "warn" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
-							)}>
+							<span
+								className={cn(
+									"px-1.5 py-0 rounded-full font-semibold",
+									hb.memory_pressure === "warn"
+										? "bg-amber-100 text-amber-700"
+										: "bg-red-100 text-red-700",
+								)}
+							>
 								MEM {hb.memory_pressure === "warn" ? "경고" : "위험"}
 							</span>
 						)}
@@ -307,10 +308,14 @@ function NodeCard({
 							</span>
 						)}
 						{hb?.openclaw_status && (
-							<span className={cn(
-								"px-1.5 py-0 rounded-full font-semibold",
-								hb.openclaw_status === "running" ? "bg-blue-100 text-blue-700" : "bg-neutral-100 text-neutral-500"
-							)}>
+							<span
+								className={cn(
+									"px-1.5 py-0 rounded-full font-semibold",
+									hb.openclaw_status === "running"
+										? "bg-blue-100 text-blue-700"
+										: "bg-neutral-100 text-neutral-500",
+								)}
+							>
 								OCL
 							</span>
 						)}
@@ -355,7 +360,12 @@ function PriorityBadge({ priority }: { priority: string }) {
 		low: "bg-neutral-100 text-neutral-500",
 	};
 	return (
-		<span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", styles[priority] ?? styles.low)}>
+		<span
+			className={cn(
+				"text-[10px] font-semibold px-2 py-0.5 rounded-full",
+				styles[priority] ?? styles.low,
+			)}
+		>
 			{priority}
 		</span>
 	);
@@ -380,6 +390,7 @@ export default function DashboardPage() {
 
 	const coordinator = nodeRoles.find((n) => n.is_coordinator);
 	const aliveCount = FAILOVER_CHAIN.filter((id) => isNodeAlive(heartbeatMap[id])).length;
+	const { counts: taskCounts, total: totalActiveTasks } = useActiveTaskCounts();
 
 	return (
 		<div className="max-w-[1280px] mx-auto">
@@ -394,9 +405,7 @@ export default function DashboardPage() {
 					<Pulse size={28} weight="thin" className="text-blue-500" />
 					<div>
 						<h1 className="text-2xl font-bold tracking-tight">관제센터</h1>
-						<p className="text-sm text-neutral-500 tracking-wide">
-							FlowOS Mac Mini 노드 모니터링
-						</p>
+						<p className="text-sm text-neutral-500 tracking-wide">FlowOS Mac Mini 노드 모니터링</p>
 					</div>
 				</div>
 
@@ -410,21 +419,67 @@ export default function DashboardPage() {
 					<div className="flex items-center gap-2">
 						<PulseBeacon alive={aliveCount > 0} size={8} />
 						<span className="text-neutral-600">
-							활성 노드 <span className="font-bold text-neutral-900">{aliveCount}</span> / {FAILOVER_CHAIN.length}
+							활성 노드 <span className="font-bold text-neutral-900">{aliveCount}</span> /{" "}
+							{FAILOVER_CHAIN.length}
 						</span>
 					</div>
 					<div className="flex items-center gap-2 text-neutral-600">
-						<Users size={14} weight="light" />
-						총 세션 <span className="font-bold text-neutral-900">{activeSessions.length}</span>
+						<Users size={14} weight="light" />총 세션{" "}
+						<span className="font-bold text-neutral-900">{activeSessions.length}</span>
 					</div>
 					{coordinator && (
 						<div className="flex items-center gap-2 text-neutral-600">
 							<ShieldCheck size={14} weight="light" className="text-blue-500" />
-							코디네이터: <span className="font-bold text-neutral-900">{coordinator.display_name ?? coordinator.node_id}</span>
+							코디네이터:{" "}
+							<span className="font-bold text-neutral-900">
+								{coordinator.display_name ?? coordinator.node_id}
+							</span>
 						</div>
 					)}
 				</motion.div>
 			</motion.div>
+
+			{/* Active Tasks Widget */}
+			{totalActiveTasks > 0 && (
+				<motion.section
+					initial={{ opacity: 0, y: 10 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.35 }}
+					className="mb-6"
+				>
+					<Link href="/dashboard/tasks" className="block group">
+						<div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 flex items-center gap-4 transition-all hover:shadow-md hover:border-amber-300">
+							<ListChecks size={24} weight="thin" className="text-amber-600 shrink-0" />
+							<div className="flex-1">
+								<div className="flex items-center gap-2 mb-1">
+									<span className="font-bold text-sm">활성 Tasks</span>
+									<span className="text-xl font-bold text-amber-700 tabular-nums">
+										{totalActiveTasks}
+									</span>
+								</div>
+								<div className="flex gap-3 text-[11px] text-neutral-500">
+									{FAILOVER_CHAIN.map((nodeId) => {
+										const count = taskCounts[nodeId];
+										if (!count) return null;
+										const display = NODE_DISPLAY[nodeId];
+										return (
+											<span key={nodeId}>
+												{display?.name ?? nodeId}:{" "}
+												<span className="font-semibold text-neutral-700">{count}</span>
+											</span>
+										);
+									})}
+								</div>
+							</div>
+							<ArrowRight
+								size={16}
+								weight="light"
+								className="text-neutral-400 group-hover:text-neutral-600 transition-colors"
+							/>
+						</div>
+					</Link>
+				</motion.section>
+			)}
 
 			{/* Node Status Cards */}
 			<section className="mb-8">
@@ -622,12 +677,14 @@ export default function DashboardPage() {
 									>
 										<div className="flex items-center gap-2">
 											<PulseBeacon alive={alive} size={8} />
-											<span className="font-bold text-sm">{NODE_DISPLAY[nodeId]?.name ?? nodeId}</span>
-											{isCoord && <ShieldCheck size={14} weight="light" className="text-blue-500" />}
+											<span className="font-bold text-sm">
+												{NODE_DISPLAY[nodeId]?.name ?? nodeId}
+											</span>
+											{isCoord && (
+												<ShieldCheck size={14} weight="light" className="text-blue-500" />
+											)}
 										</div>
-										<span className="text-[11px] text-neutral-500">
-											우선순위 {idx + 1}
-										</span>
+										<span className="text-[11px] text-neutral-500">우선순위 {idx + 1}</span>
 										<span
 											className={cn(
 												"text-[11px] font-semibold",
@@ -655,10 +712,15 @@ export default function DashboardPage() {
 							</div>
 							<div className="flex flex-col gap-2">
 								{failoverEvents.slice(0, 3).map((fe: FailoverEvent, i: number) => (
-									<div key={fe.id ?? i} className="flex items-center gap-3 text-xs text-neutral-500">
+									<div
+										key={fe.id ?? i}
+										className="flex items-center gap-3 text-xs text-neutral-500"
+									>
 										<Warning size={12} weight="light" className="text-amber-500 shrink-0" />
 										<span>
-											{fe.from_node ?? "?"} → <strong className="text-neutral-800">{fe.to_node ?? "?"}</strong> 코디네이터 이전
+											{fe.from_node ?? "?"} →{" "}
+											<strong className="text-neutral-800">{fe.to_node ?? "?"}</strong> 코디네이터
+											이전
 										</span>
 										<span className="ml-auto">{timeAgo(fe.created_at)}</span>
 									</div>

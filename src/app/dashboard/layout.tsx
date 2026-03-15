@@ -1,20 +1,21 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import {
-	SquaresFour,
-	HardDrives,
-	Folder,
-	Lightning,
-	Clock,
 	ChartLine,
+	Clock,
+	Folder,
+	HardDrives,
+	Lightning,
 	List,
+	ListChecks,
 	ShieldWarning,
 	SignOut,
+	SquaresFour,
 } from "@phosphor-icons/react";
-import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
 	{ href: "/dashboard", label: "개요", icon: SquaresFour },
@@ -22,6 +23,7 @@ const navItems = [
 	{ href: "/dashboard/events", label: "이벤트", icon: Lightning },
 	{ href: "/dashboard/analytics", label: "Analytics", icon: ChartLine },
 	{ href: "/dashboard/logs", label: "Logs", icon: List },
+	{ href: "/dashboard/tasks", label: "Tasks", icon: ListChecks },
 	{ href: "/dashboard/crons", label: "크론 작업", icon: Clock },
 	{ href: "/dashboard/controls", label: "제어 패널", icon: ShieldWarning },
 ];
