@@ -128,6 +128,9 @@ export default function AnalyticsPage() {
 		? (diskValues.reduce((s, v) => s + v, 0) / diskValues.length).toFixed(0)
 		: "—";
 
+	const totalHeartbeats = heartbeats.length;
+	const nodeCount = new Set(heartbeats.map((h) => h.node_id)).size;
+
 	if (isLoading) {
 		return (
 			<div className="flex items-center justify-center h-64 text-neutral-400 text-sm">
@@ -153,11 +156,12 @@ export default function AnalyticsPage() {
 			</motion.div>
 
 			{/* Stat cards */}
-			<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+			<div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
 				<StatCard label="평균 CPU" value={avgCpu} unit="%" icon={Cpu} color="bg-blue-50 text-blue-600" />
 				<StatCard label="평균 메모리" value={avgMem} unit="%" icon={Memory} color="bg-purple-50 text-purple-600" />
 				<StatCard label="평균 여유 디스크" value={avgDisk} unit="GB" icon={HardDrive} color="bg-emerald-50 text-emerald-600" />
 				<StatCard label="전체 업타임" value={uptimePct} unit="%" icon={CheckCircle} color="bg-amber-50 text-amber-600" />
+				<StatCard label="데이터 포인트" value={String(totalHeartbeats)} unit={`(${nodeCount}노드)`} icon={ChartLine} color="bg-cyan-50 text-cyan-600" />
 			</div>
 
 			{/* Per-node uptime row */}
