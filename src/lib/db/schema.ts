@@ -129,6 +129,48 @@ export const cronExecutions = pgTable("cron_executions", {
 	durationMs: integer("duration_ms"),
 });
 
+export const fmpMessages = pgTable("fmp_messages", {
+	id: text("id").primaryKey(),
+	ts: timestamp("ts", { withTimezone: true }).defaultNow(),
+	fromNode: text("from_node").notNull(),
+	toNode: text("to_node").notNull(),
+	type: text("type").notNull(),
+	priority: text("priority").default("normal"),
+	payload: jsonb("payload").notNull().default({}),
+	replyTo: text("reply_to"),
+	channel: text("channel"),
+	project: text("project"),
+	session: text("session"),
+	status: text("status").default("sent"),
+	ttl: integer("ttl"),
+	retries: integer("retries").default(0),
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const fmpNodeStatus = pgTable("fmp_node_status", {
+	node: text("node").primaryKey(),
+	cpu: doublePrecision("cpu"),
+	load: doublePrecision("load"),
+	freeMb: integer("free_mb"),
+	activeSessions: jsonb("active_sessions"),
+	queueDepth: integer("queue_depth").default(0),
+	lastHeartbeat: timestamp("last_heartbeat", { withTimezone: true }),
+	status: text("status").default("up"),
+	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const fmpTaskQueue = pgTable("fmp_task_queue", {
+	id: text("id").primaryKey(),
+	messageId: text("message_id"),
+	targetNode: text("target_node"),
+	priority: text("priority").default("normal"),
+	status: text("status").default("pending"),
+	assignedSession: text("assigned_session"),
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+	startedAt: timestamp("started_at", { withTimezone: true }),
+	completedAt: timestamp("completed_at", { withTimezone: true }),
+});
+
 export const agentEvents = pgTable("agent_events", {
 	id: uuid("id").defaultRandom().primaryKey(),
 	sourceNode: text("source_node").notNull().references(() => nodeRoles.nodeId),

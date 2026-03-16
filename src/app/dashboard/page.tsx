@@ -5,6 +5,8 @@ import {
 	ArrowRight,
 	ArrowUp,
 	ArrowsClockwise,
+	ChatCircleDots,
+	ChatsCircle,
 	Monitor,
 	CalendarCheck,
 	Clock,
@@ -28,6 +30,7 @@ import Link from "next/link";
 import { Line, LineChart, ResponsiveContainer } from "recharts";
 import { PulseBeacon } from "@/components/ui/pulse-beacon";
 import { useAgentEvents, useFailoverEvents } from "@/lib/hooks/use-events";
+import { useFmpMessages, useFmpStats } from "@/lib/hooks/use-fmp";
 import { useLatestHeartbeats, useNodeHeartbeats, useNodeRoles } from "@/lib/hooks/use-nodes";
 import { useActiveSessions } from "@/lib/hooks/use-sessions";
 import { useActiveTaskCounts } from "@/lib/hooks/use-tasks";
@@ -37,6 +40,7 @@ import type {
 	ActiveSession,
 	AgentEvent,
 	FailoverEvent,
+	FmpMessage,
 	NodeHeartbeat,
 	NodeRole,
 } from "@/types/database";
@@ -441,6 +445,8 @@ export default function DashboardPage() {
 	const aliveCount = FAILOVER_CHAIN.filter((id) => isNodeAlive(heartbeatMap[id])).length;
 	const { counts: taskCounts, total: totalActiveTasks } = useActiveTaskCounts();
 	const { data: workersData, isFetching: workersFetching } = useWorkers();
+	const { data: fmpMessages = [] } = useFmpMessages(15);
+	const { data: fmpStats } = useFmpStats();
 
 	return (
 		<div className="max-w-[1280px] mx-auto">
@@ -656,6 +662,174 @@ export default function DashboardPage() {
 						);
 					})}
 				</div>
+			</motion.section>
+
+			{/* FlowMesh Protocol */}
+			<motion.section
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.4, delay: 0.32 }}
+				className="mb-8"
+			>
+				<div className="flex items-center justify-between mb-4">
+					<h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400">
+						FlowMesh Protocol
+					</h2>
+					{fmpStats && (
+						<span className="text-[11px] text-neutral-400">최근 1시간</span>
+					)}
+				</div>
+
+				{/* FMP Stats Row */}
+				{fmpStats && fmpStats.total > 0 && (
+					<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+						<div className="rounded-xl border border-neutral-200 bg-white p-3">
+							<div className="text-[11px] text-neutral-400 mb-1">총 메시지</div>
+							<div className="text-xl font-bold tabular-nums">{fmpStats.total}</div>
+						</div>
+						<div className="rounded-xl border border-neutral-200 bg-white p-3">
+							<div className="text-[11px] text-neutral-400 mb-1">Slack 포스팅</div>
+							<div className="text-xl font-bold tabular-nums text-blue-600">{fmpStats.slackPosts}</div>
+						</div>
+						<div className="rounded-xl border border-neutral-200 bg-white p-3">
+							<div className="text-[11px] text-neutral-400 mb-1">노드 간 통신</div>
+							<div className="text-xl font-bold tabular-nums text-emerald-600">{fmpStats.nodeToNode}</div>
+						</div>
+						<div className="rounded-xl border border-neutral-200 bg-white p-3">
+							<div className="text-[11px] text-neutral-400 mb-1">실패</div>
+							<div className={cn(
+								"text-xl font-bold tabular-nums",
+								(fmpStats.byStatus["failed"] ?? 0) > 0 ? "text-red-600" : "text-neutral-300",
+							)}>
+								{fmpStats.byStatus["failed"] ?? 0}
+							</div>
+						</div>
+					</div>
+				)}
+
+				{/* FMP Message Flow */}
+				<div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+					<div className="px-5 py-3 border-b border-neutral-100 flex items-center gap-3">
+						<ChatsCircle size={16} weight="light" className="text-blue-500" />
+						<span className="font-semibold text-sm">메시지 흐름</span>
+						<span className="ml-auto text-[11px] text-neutral-400">{fmpMessages.length}건</span>
+					</div>
+					{fmpMessages.length === 0 ? (
+						<div className="px-5 py-8 text-center text-neutral-400 text-sm">
+							FMP 메시지 없음
+						</div>
+					) : (
+						<div className="max-h-72 overflow-y-auto divide-y divide-neutral-100">
+							{fmpMessages.map((msg: FmpMessage, i: number) => {
+								const isSlack = msg.to_node === "slack";
+								const typeColors: Record<string, string> = {
+									cmd: "bg-blue-100 text-blue-700",
+									result: "bg-emerald-100 text-emerald-700",
+									ack: "bg-neutral-100 text-neutral-600",
+									event: "bg-amber-100 text-amber-700",
+									query: "bg-purple-100 text-purple-700",
+								};
+								const statusColors: Record<string, string> = {
+									delivered: "text-emerald-600",
+									sent: "text-blue-500",
+									acked: "text-emerald-600",
+									failed: "text-red-500",
+									expired: "text-neutral-400",
+								};
+								const payload = msg.payload as Record<string, unknown>;
+								const summary = (payload?.summary as string) ?? (payload?.action as string) ?? (payload?.event as string) ?? "";
+								const project = msg.project;
+
+								return (
+									<motion.div
+										key={msg.id}
+										initial={{ opacity: 0, x: -8 }}
+										animate={{ opacity: 1, x: 0 }}
+										transition={{ delay: i * 0.03 }}
+										className="px-5 py-2.5 flex items-center gap-3"
+									>
+										{isSlack ? (
+											<ChatCircleDots size={14} weight="light" className="text-blue-400 shrink-0" />
+										) : (
+											<ArrowRight size={14} weight="light" className="text-neutral-400 shrink-0" />
+										)}
+										<div className="flex-1 min-w-0">
+											<div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+												<span className="font-semibold text-xs">
+													{msg.from_node}
+												</span>
+												<span className="text-neutral-300 text-xs">→</span>
+												<span className="font-semibold text-xs">
+													{isSlack ? `#${project ?? "slack"}` : msg.to_node}
+												</span>
+												<span className={cn(
+													"text-[10px] font-semibold px-1.5 py-0 rounded-full",
+													typeColors[msg.type] ?? "bg-neutral-100 text-neutral-500",
+												)}>
+													{msg.type}
+												</span>
+												{project && !isSlack && (
+													<span className="text-[10px] text-neutral-400">{project}</span>
+												)}
+											</div>
+											{summary && (
+												<p className="text-[11px] text-neutral-500 truncate">{summary}</p>
+											)}
+										</div>
+										<div className="flex items-center gap-2 shrink-0">
+											<span className={cn("text-[10px] font-medium", statusColors[msg.status] ?? "text-neutral-400")}>
+												{msg.status}
+											</span>
+											<span className="text-[10px] text-neutral-400">
+												{timeAgo(msg.created_at)}
+											</span>
+										</div>
+									</motion.div>
+								);
+							})}
+						</div>
+					)}
+				</div>
+
+				{/* Per-node + per-project breakdown */}
+				{fmpStats && fmpStats.total > 0 && (
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+						{/* By Node */}
+						<div className="rounded-xl border border-neutral-200 bg-white p-4">
+							<div className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wide mb-2">노드별 발신</div>
+							<div className="flex flex-col gap-1.5">
+								{Object.entries(fmpStats.byNode).sort(([,a],[,b]) => b - a).map(([node, count]) => (
+									<div key={node} className="flex items-center gap-2">
+										<span className={cn("text-xs font-semibold w-20", NODE_ACCENT[node] ?? "text-neutral-700")}>{NODE_DISPLAY[node]?.name ?? node}</span>
+										<div className="flex-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+											<div
+												className={cn("h-full rounded-full", node === "antoni" ? "bg-blue-400" : node === "kyungjini" ? "bg-green-400" : "bg-purple-400")}
+												style={{ width: `${Math.min(100, (count / fmpStats.total) * 100)}%` }}
+											/>
+										</div>
+										<span className="text-xs text-neutral-500 tabular-nums w-6 text-right">{count}</span>
+									</div>
+								))}
+							</div>
+						</div>
+						{/* By Project */}
+						<div className="rounded-xl border border-neutral-200 bg-white p-4">
+							<div className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wide mb-2">프로젝트별</div>
+							{Object.keys(fmpStats.byProject).length === 0 ? (
+								<div className="text-xs text-neutral-400">프로젝트 데이터 없음</div>
+							) : (
+								<div className="flex flex-col gap-1.5">
+									{Object.entries(fmpStats.byProject).sort(([,a],[,b]) => b - a).slice(0, 6).map(([proj, count]) => (
+										<div key={proj} className="flex items-center justify-between">
+											<span className="text-xs text-neutral-600 truncate">{proj}</span>
+											<span className="text-xs font-semibold text-neutral-700 tabular-nums">{count}</span>
+										</div>
+									))}
+								</div>
+							)}
+						</div>
+					</div>
+				)}
 			</motion.section>
 
 			{/* Active Sessions + Recent Events */}

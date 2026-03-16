@@ -157,6 +157,36 @@ export type CronExecution = {
 	duration_ms: number | null;
 };
 
+export type FmpMessage = {
+	id: string;
+	ts: string;
+	from_node: string;
+	to_node: string;
+	type: "cmd" | "query" | "result" | "event" | "ack";
+	priority: string;
+	payload: Record<string, unknown>;
+	reply_to: string | null;
+	channel: string | null;
+	project: string | null;
+	session: string | null;
+	status: "sent" | "delivered" | "acked" | "expired" | "failed";
+	ttl: number | null;
+	retries: number;
+	created_at: string;
+};
+
+export type FmpTaskQueue = {
+	id: string;
+	message_id: string;
+	target_node: string;
+	priority: string;
+	status: "pending" | "assigned" | "running" | "done" | "failed";
+	assigned_session: string | null;
+	created_at: string;
+	started_at: string | null;
+	completed_at: string | null;
+};
+
 export type AgentEvent = {
 	id: string;
 	source_node: string;
