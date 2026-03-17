@@ -1,92 +1,69 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
-const NODES = [
-	{
-		nodeId: "Antoni",
-		url: "http://100.88.238.69:18789",
-		token: "a5e74f78bf90196d153769a50c4d7a769a67a7d636559b5f",
-	},
-	{
-		nodeId: "Kyungjini",
-		url: "http://100.96.10.3:18790",
-		token: "4020bd24cc5b33483c93a9d45e68e642d3e63de1fb00c984",
-	},
-	{
-		nodeId: "Jaepini",
-		url: "http://100.110.12.82:18790",
-		token: "4020bd24cc5b33483c93a9d45e68e642d3e63de1fb00c984",
-	},
-];
+const NODE_IDS = ["antoni", "kyungjini", "jaepini"];
 
-async function fetchNodeSessions(node: (typeof NODES)[number]) {
-	const controller = new AbortController();
-	const timeout = setTimeout(() => controller.abort(), 3000);
+export async function GET() {
+	const supabase = await createClient();
 
-	try {
-		const res = await fetch(`${node.url}/tools/invoke`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${node.token}`,
-			},
-			body: JSON.stringify({
-				tool: "sessions_list",
-				args: { activeMinutes: 5, messageLimit: 1 },
-			}),
-			signal: controller.signal,
-		});
+	// Fetch active sessions grouped by node
+	const { data: sessions } = await supabase
+		.from("active_sessions")
+		.select("*")
+		.order("last_activity_at", { ascending: false });
 
-		clearTimeout(timeout);
+	// Fetch latest heartbeat per node for online/offline status
+	const { data: heartbeats } = await supabase
+		.from("node_heartbeats")
+		.select("node_id, status, created_at")
+		.order("created_at", { ascending: false })
+		.limit(30);
 
-		if (!res.ok) return { nodeId: node.nodeId, error: "offline" };
+	// Build latest heartbeat map
+	const latestHeartbeat = new Map<string, { status: string; createdAt: string }>();
+	for (const hb of heartbeats ?? []) {
+		if (!latestHeartbeat.has(hb.node_id)) {
+			latestHeartbeat.set(hb.node_id, {
+				status: hb.status ?? "unknown",
+				createdAt: hb.created_at,
+			});
+		}
+	}
 
-		const data = await res.json();
-		// sessions_list returns {ok, result: {content: [{type:"text", text: JSON}]}}
-		const raw = data?.result?.content?.[0]?.text;
-		let sessions: unknown[] = [];
-		if (raw) {
-			try {
-				const parsed = JSON.parse(raw);
-				sessions = Array.isArray(parsed) ? parsed : parsed?.sessions ?? [];
-			} catch {
-				sessions = [];
-			}
+	const nodes = NODE_IDS.map((nodeId) => {
+		const hb = latestHeartbeat.get(nodeId);
+		const lastHeartbeatAge = hb
+			? Math.floor((Date.now() - new Date(hb.createdAt).getTime()) / 1000)
+			: null;
+		const isOnline = lastHeartbeatAge !== null && lastHeartbeatAge < 120; // 2 min threshold
+
+		const nodeSessions = (sessions ?? [])
+			.filter((s) => s.node_id === nodeId)
+			.map((s) => {
+				const key = s.session_type ?? "unknown";
+				const label = key.split(":").pop() ?? key;
+				const minutesAgo = s.last_activity_at
+					? Math.floor((Date.now() - new Date(s.last_activity_at).getTime()) / 60000)
+					: null;
+
+				return {
+					key: s.id,
+					label,
+					lastMessage: s.session_type ?? "idle",
+					minutesAgo,
+					model: s.model,
+				};
+			});
+
+		if (!isOnline && nodeSessions.length === 0) {
+			return { nodeId, error: "offline" };
 		}
 
 		return {
-			nodeId: node.nodeId,
-			sessions: (sessions as Array<Record<string, unknown>>).map((s) => {
-				const key = String(s.key ?? s.sessionKey ?? "");
-				const label = key.split(":").pop() ?? key;
-				const msgs = (s.lastMessages as Array<Record<string, unknown>>) ?? [];
-				const lastMsg = msgs[0];
-				const lastContent = String(
-					lastMsg?.content ?? lastMsg?.text ?? "",
-				).slice(0, 120);
-
-				const updatedAt = String(s.updatedAt ?? s.updated_at ?? "");
-				let minutesAgo: number | null = null;
-				if (updatedAt) {
-					minutesAgo = Math.floor(
-						(Date.now() - new Date(updatedAt).getTime()) / 60000,
-					);
-				}
-
-				return { key, label, lastMessage: lastContent || "idle", minutesAgo };
-			}),
+			nodeId,
+			sessions: nodeSessions,
+			lastHeartbeatAge,
 		};
-	} catch {
-		clearTimeout(timeout);
-		return { nodeId: node.nodeId, error: "offline" };
-	}
-}
-
-export async function GET() {
-	const results = await Promise.allSettled(NODES.map(fetchNodeSessions));
-
-	const nodes = results.map((r, i) => {
-		if (r.status === "fulfilled") return r.value;
-		return { nodeId: NODES[i].nodeId, error: "offline" };
 	});
 
 	return NextResponse.json({ nodes, fetchedAt: new Date().toISOString() });
