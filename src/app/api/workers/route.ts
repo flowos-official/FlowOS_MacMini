@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
 
 const NODE_IDS = ["antoni", "kyungjini", "jaepini"];
 
 export async function GET() {
-	const supabase = await createClient();
+	// Use service role key to bypass RLS (server-side only)
+	const supabase = createServerClient(
+		process.env.NEXT_PUBLIC_SUPABASE_URL!,
+		process.env.SUPABASE_SERVICE_ROLE_KEY!,
+		{ cookies: { getAll: () => [], setAll: () => {} } },
+	);
 
 	// Fetch active sessions grouped by node
 	const { data: sessions } = await supabase
