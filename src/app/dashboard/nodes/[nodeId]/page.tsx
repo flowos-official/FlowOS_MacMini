@@ -435,8 +435,6 @@ export default function NodeDetailPage({
 	const chartBeats = [...(heartbeats ?? [])].slice(0, 50).reverse();
 	const cpuSeries = chartBeats.map((h) => h.cpu_usage);
 	const memSeries = chartBeats.map((h) => h.memory_usage);
-	const powerSeries = chartBeats.map((h) => h.power_watts);
-	const netInSeries = chartBeats.map((h) => h.net_in_mbps);
 
 	const isAlive = hb ? Date.now() - new Date(hb.created_at).getTime() < 90_000 : false;
 
@@ -482,21 +480,13 @@ export default function NodeDetailPage({
 			</div>
 
 			{/* ── Row 1: Live Metrics Grid ────────────────────────────────── */}
-			<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+			<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 				{/* CPU */}
 				<StatCard
 					icon={Cpu}
 					label="CPU"
 					value={hb?.cpu_usage != null ? `${hb.cpu_usage.toFixed(0)}%` : "—"}
 					accent={metricColor(hb?.cpu_usage ?? null)}
-					sub={
-						hb?.cpu_temp_c != null ? (
-							<span className="flex items-center gap-1">
-								<Thermometer size={11} weight="light" />
-								{hb.cpu_temp_c.toFixed(0)}°C
-							</span>
-						) : undefined
-					}
 				/>
 
 				{/* Memory */}
@@ -505,13 +495,6 @@ export default function NodeDetailPage({
 					label="메모리"
 					value={hb?.memory_usage != null ? `${hb.memory_usage.toFixed(0)}%` : "—"}
 					accent={metricColor(hb?.memory_usage ?? null)}
-					sub={
-						<div className="space-y-0.5">
-							{hb?.memory_wired_gb != null && <div>고정 {hb.memory_wired_gb.toFixed(1)}GB</div>}
-							{hb?.memory_compressed_gb != null && <div>압축 {hb.memory_compressed_gb.toFixed(1)}GB</div>}
-							{hb?.memory_pressure && <PressureBadge pressure={hb.memory_pressure} />}
-						</div>
-					}
 				/>
 
 				{/* Disk */}
@@ -526,71 +509,11 @@ export default function NodeDetailPage({
 								: "—"
 					}
 					accent={metricColor(diskUsedPct)}
-					sub={
-						(hb?.disk_read_mbps != null || hb?.disk_write_mbps != null) ? (
-							<div className="space-y-0.5">
-								{hb?.disk_read_mbps != null && <div>읽기 {hb.disk_read_mbps.toFixed(1)} MB/s</div>}
-								{hb?.disk_write_mbps != null && <div>쓰기 {hb.disk_write_mbps.toFixed(1)} MB/s</div>}
-							</div>
-						) : undefined
-					}
-				/>
-
-				{/* Power */}
-				<StatCard
-					icon={Lightning}
-					label="전력"
-					value={hb?.power_watts != null ? `${hb.power_watts.toFixed(0)}W` : "—"}
-					sub={
-						hb?.fan_rpm != null ? (
-							<span className="flex items-center gap-1">
-								<Wind size={11} weight="light" />
-								{hb.fan_rpm.toLocaleString()} RPM
-							</span>
-						) : undefined
-					}
-				/>
-
-				{/* GPU / ANE */}
-				<StatCard
-					icon={Pulse}
-					label="GPU / ANE"
-					value={
-						hb?.gpu_usage != null
-							? `${hb.gpu_usage.toFixed(0)}%`
-							: "—"
-					}
-					accent={metricColor(hb?.gpu_usage ?? null)}
-					sub={
-						hb?.ane_usage != null ? (
-							<div>ANE {hb.ane_usage.toFixed(0)}%</div>
-						) : undefined
-					}
-				/>
-
-				{/* Network */}
-				<StatCard
-					icon={Gauge}
-					label="네트워크"
-					value={
-						hb?.net_in_mbps != null || hb?.net_out_mbps != null ? (
-							<div className="text-sm space-y-0.5">
-								<div className="flex items-center gap-1 text-emerald-600">
-									<ArrowDown size={11} weight="bold" />
-									{(hb?.net_in_mbps ?? 0).toFixed(2)} MB/s
-								</div>
-								<div className="flex items-center gap-1 text-blue-600">
-									<ArrowUp size={11} weight="bold" />
-									{(hb?.net_out_mbps ?? 0).toFixed(2)} MB/s
-								</div>
-							</div>
-						) : "—"
-					}
 				/>
 			</div>
 
 			{/* ── Row 2: Charts ──────────────────────────────────────────────── */}
-			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				<div className="rounded-xl border border-neutral-200 bg-white p-4">
 					<div className="flex items-center gap-1.5 mb-3">
 						<Cpu size={13} weight="light" className="text-neutral-400" />
@@ -605,24 +528,10 @@ export default function NodeDetailPage({
 					</div>
 					<Sparkline data={memSeries} color="#6366f1" height={64} unit="%" />
 				</div>
-				<div className="rounded-xl border border-neutral-200 bg-white p-4">
-					<div className="flex items-center gap-1.5 mb-3">
-						<Lightning size={13} weight="light" className="text-neutral-400" />
-						<span className="text-xs font-medium text-neutral-600">전력 추이</span>
-					</div>
-					<Sparkline data={powerSeries} color="#f59e0b" height={64} unit="W" />
-				</div>
-				<div className="rounded-xl border border-neutral-200 bg-white p-4">
-					<div className="flex items-center gap-1.5 mb-3">
-						<ArrowDown size={13} weight="light" className="text-neutral-400" />
-						<span className="text-xs font-medium text-neutral-600">수신 대역폭</span>
-					</div>
-					<Sparkline data={netInSeries} color="#3b82f6" height={64} unit=" MB/s" />
-				</div>
 			</div>
 
 			{/* ── Row 3: System Info ──────────────────────────────────────────── */}
-			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+			<div className="grid grid-cols-2 gap-3">
 				<div className="rounded-xl border border-neutral-200 bg-white p-4">
 					<div className="flex items-center gap-1.5 mb-2">
 						<Clock size={13} weight="light" className="text-neutral-400" />
@@ -633,114 +542,26 @@ export default function NodeDetailPage({
 
 				<div className="rounded-xl border border-neutral-200 bg-white p-4">
 					<div className="flex items-center gap-1.5 mb-2">
-						<Database size={13} weight="light" className="text-neutral-400" />
-						<span className="text-xs text-neutral-500">메모리 압력</span>
-					</div>
-					<PressureBadge pressure={hb?.memory_pressure ?? null} />
-					{hb?.swap_used_gb != null && (
-						<div className="text-xs text-neutral-400 mt-1.5">스왑 {hb.swap_used_gb.toFixed(1)}GB</div>
-					)}
-				</div>
-
-				<div className="rounded-xl border border-neutral-200 bg-white p-4">
-					<div className="flex items-center gap-1.5 mb-2">
 						<WifiHigh size={13} weight="light" className="text-neutral-400" />
 						<span className="text-xs text-neutral-500">Tailscale</span>
 					</div>
 					<TailscaleBadge status={hb?.tailscale_status ?? null} latencyMs={hb?.tailscale_latency_ms ?? null} />
-					{hb?.latency_supabase_ms != null && (
-						<div className="text-xs text-neutral-400 mt-1">Supabase {hb.latency_supabase_ms}ms</div>
-					)}
-					{hb?.latency_anthropic_ms != null && (
-						<div className="text-xs text-neutral-400">Anthropic {hb.latency_anthropic_ms}ms</div>
-					)}
-				</div>
-
-				<div className="rounded-xl border border-neutral-200 bg-white p-4">
-					<div className="flex items-center gap-1.5 mb-2">
-						<GitBranch size={13} weight="light" className="text-neutral-400" />
-						<span className="text-xs text-neutral-500">Git 레포</span>
-					</div>
-					<div className="text-lg font-bold text-neutral-800">{hb?.git_repo_count ?? "—"}</div>
-					<div className="text-xs text-neutral-400 mt-0.5">로컬 레포지토리</div>
 				</div>
 			</div>
 
-			{/* ── Row 4: AI Activity ──────────────────────────────────────────── */}
-			<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-				{/* Claude PIDs */}
-				<section className="rounded-xl border border-neutral-200 bg-white p-5">
-					<div className="flex items-center gap-2 mb-4">
-						<Robot size={15} weight="light" className="text-neutral-400" />
-						<h2 className="text-sm font-semibold">Claude 프로세스</h2>
-						<span className="ml-auto text-xs text-neutral-400">
-							{hb?.active_claude_sessions ?? 0}개 실행 중
-						</span>
-					</div>
-					{!hb?.claude_pids || hb.claude_pids.length === 0 ? (
-						<p className="text-sm text-neutral-400">실행 중인 Claude 없음</p>
-					) : (
-						<div className="space-y-2">
-							{(hb.claude_pids as ClaudePid[]).map((p) => (
-								<div key={p.pid} className="flex items-center gap-3 text-xs text-neutral-600">
-									<span className="font-mono text-neutral-400 w-14">{p.pid}</span>
-									<span className="text-neutral-500 flex-1">{p.model}</span>
-									<span>{(p.memory_mb).toFixed(0)}MB</span>
-									<span className="text-neutral-400">{formatRuntime(p.runtime_sec)}</span>
-								</div>
-							))}
-						</div>
-					)}
-
-					<div className="mt-4 pt-4 border-t border-neutral-100 grid grid-cols-3 gap-3">
-						<div>
-							<div className="text-[10px] text-neutral-400 mb-1">오늘 토큰</div>
-							<div className="text-sm font-bold text-neutral-700">
-								{hb?.tokens_today != null ? hb.tokens_today.toLocaleString() : "—"}
-							</div>
-						</div>
-						<div>
-							<div className="text-[10px] text-neutral-400 mb-1">오늘 비용</div>
-							<div className="text-sm font-bold text-neutral-700 flex items-center gap-0.5">
-								<CurrencyDollar size={13} weight="light" className="text-neutral-400" />
-								{hb?.cost_today_usd != null ? hb.cost_today_usd.toFixed(3) : "—"}
-							</div>
-						</div>
-						<div>
-							<div className="text-[10px] text-neutral-400 mb-1">API 레이턴시</div>
-							<div className="text-sm font-bold text-neutral-700">
-								{hb?.api_latency_ms != null ? `${hb.api_latency_ms}ms` : "—"}
-							</div>
-						</div>
-					</div>
-				</section>
-
-				{/* Top Processes */}
-				<section className="rounded-xl border border-neutral-200 bg-white p-5">
-					<div className="flex items-center gap-2 mb-4">
-						<Pulse size={15} weight="light" className="text-neutral-400" />
-						<h2 className="text-sm font-semibold">상위 프로세스</h2>
-					</div>
-					{!hb?.top_processes || (hb.top_processes as TopProcess[]).length === 0 ? (
-						<p className="text-sm text-neutral-400">프로세스 데이터 없음</p>
-					) : (
-						<div className="space-y-3">
-							{(hb.top_processes as TopProcess[]).map((p, i) => (
-								<div key={`${p.name}-${i}`} className="space-y-1">
-									<div className="flex items-center justify-between text-xs">
-										<span className="font-mono text-neutral-700 truncate max-w-[140px]" title={p.name}>{p.name}</span>
-										<div className="flex items-center gap-3 text-neutral-500">
-											<span>{p.cpu_pct.toFixed(1)}%</span>
-											<span>{p.mem_mb.toFixed(0)}MB</span>
-										</div>
-									</div>
-									<MiniBar value={p.cpu_pct} color={metricColor(p.cpu_pct)} />
-								</div>
-							))}
-						</div>
-					)}
-				</section>
-			</div>
+			{/* ── Row 4: OpenClaw Status ──────────────────────────────────── */}
+			<section className="rounded-xl border border-neutral-200 bg-white p-5">
+				<div className="flex items-center gap-2 mb-2">
+					<Robot size={15} weight="light" className="text-neutral-400" />
+					<h2 className="text-sm font-semibold">OpenClaw</h2>
+					<span className="ml-auto text-xs text-neutral-400">
+						{hb?.openclaw_status ?? "—"}
+					</span>
+				</div>
+				{hb?.openclaw_version && (
+					<div className="text-xs text-neutral-400">버전: {hb.openclaw_version}</div>
+				)}
+			</section>
 
 			{/* ── Row 5: OpenClaw Logs ──────────────────────────────────────── */}
 			<OpenclawLogsViewer nodeId={nodeId} />

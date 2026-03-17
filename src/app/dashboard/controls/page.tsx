@@ -373,30 +373,6 @@ export default function ControlsPage() {
         </div>
       </section>
 
-      {/* Circuit Breaker Status */}
-      <section>
-        <h2 className="text-sm font-semibold text-[var(--color-foreground)] mb-3 uppercase tracking-wide">
-          서킷 브레이커 임계값
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {CIRCUIT_BREAKER_THRESHOLDS.map(({ icon: Icon, label, threshold, action }) => (
-            <div
-              key={label}
-              className="border border-[var(--color-border)] rounded-lg p-4 flex items-start gap-3"
-            >
-              <Icon size={18} weight="thin" className="text-[var(--color-muted-foreground)] mt-0.5 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-[var(--color-foreground)]">{label}</p>
-                <p className="text-xs text-[var(--color-muted-foreground)] mt-0.5">{threshold}</p>
-                <span className="inline-block mt-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--color-secondary)] text-[var(--color-muted-foreground)]">
-                  {action}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Coordinator Management */}
       <section>
         <h2 className="text-sm font-semibold text-[var(--color-foreground)] mb-3 uppercase tracking-wide">
